@@ -13,6 +13,8 @@ public class ResponsePackage {
 
     public String stringResponse;
 
+    public int code = 0;
+
     public ResponsePackage() {
     }
 
@@ -57,5 +59,13 @@ public class ResponsePackage {
 
     public void setJsonArrayResult(JSONArray jsonArrayResult) {
         this.jsonArrayResult = jsonArrayResult;
+    }
+
+    public int getCode() {
+        return code;
+    }
+
+    public void setCode(int code) {
+        this.code = code;
     }
 }

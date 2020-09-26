@@ -1,5 +1,7 @@
 package com.kamilamalikova.help.request;
 
+import com.loopj.android.http.RequestParams;
+
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
@@ -85,5 +87,10 @@ public class RequestPackage {
     public String getFullUrl(){
         if (!method.equals(RequestType.GET)) return url;
         return this.url+"/?"+getEncodedParams();
+    }
+
+
+    public RequestParams getRequestParams(){
+        return new RequestParams(params);
     }
 }
