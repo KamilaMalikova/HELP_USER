@@ -15,20 +15,12 @@ import com.kamilamalikova.help.jwt.Jwt;
 import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
-import com.kamilamalikova.help.request.ResponsePackage;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.w3c.dom.Node;
-
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.Map;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.ByteArrayEntity;
@@ -45,6 +37,7 @@ public class LogInActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_log_in);
         usernameTextEdit = (EditText)findViewById(R.id.usernameTextEdit);
         passwordTextEdit = (EditText)findViewById(R.id.passwordTextEdit);
@@ -96,8 +89,8 @@ public class LogInActivity extends AppCompatActivity {
 
                                     LoggedInUser loggedInUser = new LoggedInUser("", claims.getSubject(), role);
 
-                                    Intent intent = new Intent(getApplicationContext(), TerminalActivity.class);
-                                    intent.putExtra("user", loggedInUser);
+                                    Intent intent = new Intent(getApplicationContext(), NavigationActivity.class);
+                                    intent.putExtra("com.kamilamalikova.help.user", loggedInUser);
 
                                     startActivity(intent);
                                     return;
@@ -120,7 +113,4 @@ public class LogInActivity extends AppCompatActivity {
             }
         });
     }
-
-
-
 }

@@ -8,16 +8,19 @@ public class LoggedInUser implements Parcelable {
     private String displayName;
     private String username;
     private UserRole role;
+    private String roleString;
 
     public LoggedInUser(String displayName, String username, String role) {
          this.displayName = displayName;
         this.username = username;
         this.setRole(role);
+        this.roleString = this.getRole().name();
     }
 
     protected LoggedInUser(Parcel in) {
         displayName = in.readString();
         username = in.readString();
+        this.setRole(in.readString());
     }
 
     public static final Creator<LoggedInUser> CREATOR = new Creator<LoggedInUser>() {
@@ -34,13 +37,21 @@ public class LoggedInUser implements Parcelable {
 
     public void setRole(String role) {
         switch (role){
-            case "ROLE_ADMIN": this.role = UserRole.ADMIN;
+            case "ROLE_ADMIN":
+            case "ADMIN":
+                this.role = UserRole.ADMIN;
                 break;
-            case "ROLE_OWNER":this.role = UserRole.OWNER;
+            case "ROLE_OWNER":
+            case "OWNER":
+                this.role = UserRole.OWNER;
                 break;
-            case "ROLE_STUFF": this.role = UserRole.STUFF;
+            case "ROLE_STUFF":
+            case "STUFF":
+                this.role = UserRole.STUFF;
                 break;
-            case "ROLE_WAITER":this.role = UserRole.WAITER;
+            case "ROLE_WAITER":
+            case "WAITER":
+                this.role = UserRole.WAITER;
                 break;
             default: this.role = UserRole.NOTWORKING;
         }
@@ -62,6 +73,14 @@ public class LoggedInUser implements Parcelable {
         return role;
     }
 
+    public String getRoleString() {
+        return roleString;
+    }
+
+    public void setRoleString(String roleString) {
+        this.roleString = roleString;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -71,6 +90,6 @@ public class LoggedInUser implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(displayName);
         dest.writeString(username);
-        dest.writeString(role.name());
+        dest.writeString(roleString);
     }
 }

@@ -30,7 +30,8 @@ public class RequestPackage {
     }
 
     public void setUrl(String url) {
-        this.url = prefix+server+":"+port+url;
+        this.url = prefix+server+":"+
+                port+url;
     }
 
     public RequestType getMethod() {
