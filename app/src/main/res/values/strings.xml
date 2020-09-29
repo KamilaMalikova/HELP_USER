@@ -45,4 +45,11 @@
     </string>
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
     <string name="button">Button</string>
+    <string name="categoryName">Категории</string>
+    <string name="measeureUnits">Единицы измерения</string>
+    <string name="search">Поиск</string>
+    <string name="find">Найти</string>
+    <string name="title_activity_settings_tab">SettingsTabActivity</string>
+    <string name="tab_text_1">Tab 1</string>
+    <string name="tab_text_2">Tab 2</string>
 </resources>

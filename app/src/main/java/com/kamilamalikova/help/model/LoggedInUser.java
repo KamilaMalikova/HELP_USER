@@ -3,18 +3,29 @@ package com.kamilamalikova.help.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class LoggedInUser implements Parcelable {
+import java.io.Serializable;
+
+public class LoggedInUser implements Parcelable, Serializable{
 
     private String displayName;
     private String username;
     private UserRole role;
     private String roleString;
+    private String authorizationToken;
 
     public LoggedInUser(String displayName, String username, String role) {
          this.displayName = displayName;
         this.username = username;
         this.setRole(role);
         this.roleString = this.getRole().name();
+    }
+
+    public LoggedInUser(String displayName, String username, String roleString, String authorizationToken) {
+        this.displayName = displayName;
+        this.username = username;
+        this.setRole(role);
+        this.roleString = roleString;
+        this.authorizationToken = authorizationToken;
     }
 
     protected LoggedInUser(Parcel in) {
@@ -34,6 +45,8 @@ public class LoggedInUser implements Parcelable {
             return new LoggedInUser[size];
         }
     };
+
+
 
     public void setRole(String role) {
         switch (role){
@@ -79,6 +92,14 @@ public class LoggedInUser implements Parcelable {
 
     public void setRoleString(String roleString) {
         this.roleString = roleString;
+    }
+
+    public String getAuthorizationToken() {
+        return authorizationToken;
+    }
+
+    public void setAuthorizationToken(String authorizationToken) {
+        this.authorizationToken = authorizationToken;
     }
 
     @Override

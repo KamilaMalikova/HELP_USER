@@ -2,6 +2,7 @@ package com.kamilamalikova.help;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -18,6 +19,11 @@ import com.kamilamalikova.help.request.RequestType;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -87,10 +93,10 @@ public class LogInActivity extends AppCompatActivity {
 
                                     Log.i("Role", role);
 
-                                    LoggedInUser loggedInUser = new LoggedInUser("", claims.getSubject(), role);
-
+                                    LoggedInUser loggedInUser = new LoggedInUser("", claims.getSubject(), role, headers[i].getValue());
+                                    saveSerializable(loggedInUser);
                                     Intent intent = new Intent(getApplicationContext(), NavigationActivity.class);
-                                    intent.putExtra("com.kamilamalikova.help.user", loggedInUser);
+                                    intent.putExtra("com.kamilamalikova.help.user", (Parcelable) loggedInUser);
 
                                     startActivity(intent);
                                     return;
@@ -102,7 +108,21 @@ public class LogInActivity extends AppCompatActivity {
                             }
                         }
                     }
+                    private void saveSerializable(LoggedInUser user){
+                        try {
+                            File file = getDir("data", Context.MODE_PRIVATE);
+                            File serFile = new File(file.getAbsoluteFile()+"/user.ser");
+                            file.createNewFile();
+                            FileOutputStream fileOutputStream = new FileOutputStream(serFile, false);
+                            ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
+                            objectOutputStream.writeObject(user);
 
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
                     @Override
                     public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                         Log.i("Failure", statusCode+"");
@@ -113,4 +133,5 @@ public class LogInActivity extends AppCompatActivity {
             }
         });
     }
+
 }
