@@ -13,7 +13,6 @@
             android:name=".NavigationActivity"
             android:label="@string/title_activity_navigation"
             android:theme="@style/AppTheme.NoActionBar" />
-        <activity android:name=".TerminalActivity" />
         <activity android:name=".LogInActivity" />
         <activity android:name=".MainActivity">
             <intent-filter>

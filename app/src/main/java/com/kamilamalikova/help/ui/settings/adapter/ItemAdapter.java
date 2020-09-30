@@ -1,6 +1,7 @@
 package com.kamilamalikova.help.ui.settings.adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,6 +9,11 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import com.kamilamalikova.help.R;
+import com.kamilamalikova.help.model.SettingsObject;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class ItemAdapter extends BaseAdapter {
     LayoutInflater mInflater;
@@ -19,6 +25,17 @@ public class ItemAdapter extends BaseAdapter {
         this.items = items;
         this.mInflater = (LayoutInflater)c.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
+
+    public ItemAdapter(Context c,JSONArray jsonArrayResponse, String itemName) throws JSONException {
+        index = new String[jsonArrayResponse.length()];
+        items = new String[jsonArrayResponse.length()];
+        for (int i = 0; i < jsonArrayResponse.length(); i++) {
+            JSONObject object = (JSONObject) jsonArrayResponse.get(i);
+            index[i] = Integer.toString((int)object.get("id"));
+            items[i] = (String) object.get(itemName);
+        }
+        this.mInflater = (LayoutInflater)c.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    }
     @Override
     public int getCount() {
         return items.length;
@@ -26,8 +43,9 @@ public class ItemAdapter extends BaseAdapter {
 
     @Override
     public Object getItem(int position) {
-        return items[position];
+        return new SettingsObject(index[position],items[position]);
     }
+
 
     @Override
     public long getItemId(int position) {
@@ -48,4 +66,6 @@ public class ItemAdapter extends BaseAdapter {
 
         return v;
     }
+
+
 }

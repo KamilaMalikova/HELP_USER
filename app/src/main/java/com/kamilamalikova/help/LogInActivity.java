@@ -76,7 +76,7 @@ public class LogInActivity extends AppCompatActivity {
                     public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                         Log.i("Success", statusCode+"");
                         for (int i = 0; i < headers.length; i++) {
-                            if (headers[i].getName().equals("Authorization")){
+                            if (headers[i].getName().equals(getString(R.string.authorizationToken))){
                                 try {
 
                                     Claims claims = Jwt.decodeJWT(headers[i].getValue());

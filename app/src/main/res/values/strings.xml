@@ -52,4 +52,11 @@
     <string name="title_activity_settings_tab">SettingsTabActivity</string>
     <string name="tab_text_1">Tab 1</string>
     <string name="tab_text_2">Tab 2</string>
+    <string name="authorizationToken">Authorization</string>
+    <string name="categoty">Категория</string>
+    <string name="add">Добавить</string>
+    <string name="cancel">Отменить</string>
+    <string name="measureUnit">Единица измерения</string>
+    <string name="save">Сохранить</string>
+    <string name="newValue">Новое значение</string>
 </resources>

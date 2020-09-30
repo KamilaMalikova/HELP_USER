@@ -69,11 +69,8 @@ public class SettingsFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_settings, container, false);
         mmView = view;
         viewPager = view.findViewById(R.id.settingsViewPager);
-
         addTabs(viewPager);
-
         ((TabLayout) view.findViewById(R.id.settingsTabLayout)).setupWithViewPager(viewPager);
-
         return view;
     }
 
