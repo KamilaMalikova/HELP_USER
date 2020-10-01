@@ -63,4 +63,13 @@
     <string name="menu_products">Продукты</string>
     <string name="menu_terminal">Терминал</string>
     <string name="menu_stock">Склад</string>
+    <string name="menu_add_product">Добавить</string>
+
+
+    <string-array name="categoriesSpinner">
+        <item>Home</item>
+        <item>Work</item>
+        <item>Other</item>
+        <item>Custom</item>
+    </string-array>
 </resources>
