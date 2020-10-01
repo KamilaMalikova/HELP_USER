@@ -59,4 +59,8 @@
     <string name="measureUnit">Единица измерения</string>
     <string name="save">Сохранить</string>
     <string name="newValue">Новое значение</string>
+    <string name="delete">Удалить</string>
+    <string name="menu_products">Продукты</string>
+    <string name="menu_terminal">Терминал</string>
+    <string name="menu_stock">Склад</string>
 </resources>

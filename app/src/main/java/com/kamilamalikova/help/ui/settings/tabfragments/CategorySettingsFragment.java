@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.util.Log;
 import android.view.Gravity;
@@ -48,6 +49,8 @@ public class CategorySettingsFragment extends Fragment {
 
     ListView categoryListView;
     View thisView;
+    volatile EditText text;
+    volatile SwipeRefreshLayout swipeRefreshLayout;
 
     public CategorySettingsFragment() {
         // Required empty public constructor
@@ -63,23 +66,36 @@ public class CategorySettingsFragment extends Fragment {
         categoryListView = view.findViewById(R.id.categoryListView);
         requestData();
 
+        swipeRefreshLayout = view.findViewById(R.id.swiperefresh);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                requestData();
+                swipeRefreshLayout.setRefreshing(false);
+            }
+        });
+
         categoryListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-                SettingsObject object = (SettingsObject)categoryListView.getAdapter().getItem(position);
+                final SettingsObject object = (SettingsObject)categoryListView.getAdapter().getItem(position);
 
 
                 final View popupView =
                         //EditingSettingsFragment.newInstance(object.getId(), object.getValue(), "category");
                         inflater.inflate(R.layout.fragment_editing_settings, null);
-                EditText text = popupView.findViewById(R.id.valueSettingTextEdit);
+                text = popupView.findViewById(R.id.valueSettingTextEdit);
                 text.setText(object.getValue());
 
                 TextView idTextView = popupView.findViewById(R.id.idTextView);
                 idTextView.setText(object.getId());
                 TextView typeTextView = popupView.findViewById(R.id.typeTextView);
                 typeTextView.setText("category");
+
+                Button saveBtn = popupView.findViewById(R.id.saveSettingBtn);
+                Button deleteBtn = popupView.findViewById(R.id.saveDeleteBtn);
+
 
                 int width = LinearLayout.LayoutParams.MATCH_PARENT;
                 int height = LinearLayout.LayoutParams.MATCH_PARENT;
@@ -95,6 +111,24 @@ public class CategorySettingsFragment extends Fragment {
                         return true;
                     }
                 });
+
+                saveBtn.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        updateData(object.getId(), text.getText().toString(), "category");
+                        popupWindow.dismiss();
+                    }
+                });
+
+                deleteBtn.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        updateData(object.getId(), null, "category");
+                        popupWindow.dismiss();
+
+                    }
+                });
+
             }
         });
 
@@ -111,7 +145,7 @@ public class CategorySettingsFragment extends Fragment {
                 popupWindow.showAtLocation(view, Gravity.CENTER, 0, 0);
 
                 final EditText categoryAddEditText = popupView.findViewById(R.id.categoryAddTextEdit);
-                final Button cancelBtn = popupView.findViewById(R.id.saveCancelBtn);
+                final Button cancelBtn = popupView.findViewById(R.id.saveDeleteBtn);
                 Button addBtn = popupView.findViewById(R.id.saveSettingBtn);
 
                 addBtn.setOnClickListener(new View.OnClickListener() {
@@ -218,7 +252,64 @@ public class CategorySettingsFragment extends Fragment {
         final RequestPackage requestPackage = new RequestPackage();
         requestPackage.setMethod(RequestType.GET);
         requestPackage.setUrl("/categories");
+        ByteArrayEntity entity = null;
+        try {
+            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
 
+        Log.i("SER", requestPackage.getFullUrl() + entity);
+        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
+
+        LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
+
+        if (loggedInUser == null){
+            startIntentLogIn();
+            return;
+        }
+
+
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+
+        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                Log.i("Status", statusCode+"");
+                try {
+                    JSONArray responseArray = new JSONArray(new String(responseBody));
+                    Log.i("Category response", responseArray.toString());
+                    ItemAdapter itemAdapter = new ItemAdapter(getContext(), responseArray, "category");
+                    categoryListView.setAdapter(itemAdapter);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                Log.i("Status", statusCode+"");
+            }
+        });
+    }
+
+
+    private void updateData(String id, String updateValue, String type){
+        final RequestPackage requestPackage = new RequestPackage();
+        requestPackage.setMethod(RequestType.POST);
+        if (type.equals("category")) {
+            requestPackage.setUrl("/categories/category/"+id);
+            if (updateValue != null){
+                requestPackage.setParam("category", updateValue);
+            }
+        }
+        else {
+            requestPackage.setUrl("/units/unit/"+id);
+            if (updateValue != null){
+                requestPackage.setParam("unit", updateValue);
+            }
+        }
 
         ByteArrayEntity entity = null;
         try {
@@ -239,27 +330,67 @@ public class CategorySettingsFragment extends Fragment {
             return;
         }
 
-
         AsyncHttpClient client = new AsyncHttpClient();
         client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        final CategorySettingsFragment thisFragment = this;
+        if (updateValue == null){
+            client.post(requestPackage.getFullUrl(), new AsyncHttpResponseHandler(){
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                    Log.i("Status", statusCode+"");
+                    try {
+                        JSONObject responseObject = new JSONObject(new String(responseBody));
+                        Log.i("Category response", responseObject.toString());
+                        thisFragment.requestData();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
 
-        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+                }
 
+                @Override
+                public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                    Log.i("Status", statusCode+"");
+                    if (statusCode == 403){
+                        Snackbar.make(getView(), "Необходимо заново авторизоваться", Snackbar.LENGTH_LONG)
+                                .setAction("Action", null).show();
+                        startIntentLogIn();
+                        return;
+                    }else {
+                        Snackbar.make(getView(), "Неизвестная ошибка! "+statusCode, Snackbar.LENGTH_LONG)
+                                .setAction("Action", null).show();
+
+                    }
+                }
+            });
+        }else client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+"");
                 try {
-                    JSONArray responseArray = new JSONArray(new String(responseBody));
-                    Log.i("Category response", responseArray.toString());
-                    ItemAdapter itemAdapter = new ItemAdapter(getContext(), responseArray, "category");
-                    categoryListView.setAdapter(itemAdapter);
+                    JSONObject responseObject = new JSONObject(new String(responseBody));
+                    Log.i("Category response", responseObject.toString());
+                    thisFragment.requestData();
+
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
+
             }
+
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
+                if (statusCode == 403){
+                    Snackbar.make(getView(), "Необходимо заново авторизоваться", Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+                    startIntentLogIn();
+                    return;
+                }else {
+                    Snackbar.make(getView(), "Неизвестная ошибка! "+statusCode, Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+
+                }
             }
         });
     }

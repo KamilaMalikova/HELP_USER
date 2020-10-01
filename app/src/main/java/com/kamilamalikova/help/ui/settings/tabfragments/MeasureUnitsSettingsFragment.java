@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.util.Log;
 import android.view.Gravity;
@@ -18,6 +19,7 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupWindow;
+import android.widget.TextView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
@@ -25,6 +27,7 @@ import com.kamilamalikova.help.LogInActivity;
 import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.FileStream;
 import com.kamilamalikova.help.model.LoggedInUser;
+import com.kamilamalikova.help.model.SettingsObject;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
 import com.kamilamalikova.help.ui.settings.adapter.ItemAdapter;
@@ -42,53 +45,19 @@ import cz.msebera.android.httpclient.entity.ByteArrayEntity;
 import cz.msebera.android.httpclient.message.BasicHeader;
 import cz.msebera.android.httpclient.protocol.HTTP;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link MeasureUnitsSettingsFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
 public class MeasureUnitsSettingsFragment extends Fragment {
 
     ListView unitsListView;
-
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
-
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
-
+    volatile EditText text;
+    volatile SwipeRefreshLayout swipeRefreshLayout;
     public MeasureUnitsSettingsFragment() {
         // Required empty public constructor
-    }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment MeasureUnitsSettingsFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static MeasureUnitsSettingsFragment newInstance(String param1, String param2) {
-        MeasureUnitsSettingsFragment fragment = new MeasureUnitsSettingsFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
+
     }
 
     @Override
@@ -99,9 +68,67 @@ public class MeasureUnitsSettingsFragment extends Fragment {
 
         unitsListView = view.findViewById(R.id.unitsListView);
         requestData();
+
+        swipeRefreshLayout = view.findViewById(R.id.swiperefreshUnit);
+
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                requestData();
+                swipeRefreshLayout.setRefreshing(false);
+            }
+        });
+
         unitsListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                final SettingsObject object = (SettingsObject)unitsListView.getAdapter().getItem(position);
+
+                final View popupView =
+                        //EditingSettingsFragment.newInstance(object.getId(), object.getValue(), "category");
+                        inflater.inflate(R.layout.fragment_unit_edit, null);
+                text = popupView.findViewById(R.id.valueUnitSettingTextEdit);
+                text.setText(object.getValue());
+
+                TextView idTextView = popupView.findViewById(R.id.idUnitTextView);
+                idTextView.setText(object.getId());
+                TextView typeTextView = popupView.findViewById(R.id.typeUnitTextView);
+                typeTextView.setText("unit");
+
+                Button saveBtn = popupView.findViewById(R.id.saveUnitSettingBtn);
+                Button deleteBtn = popupView.findViewById(R.id.saveUnitDeleteBtn);
+
+
+                int width = LinearLayout.LayoutParams.MATCH_PARENT;
+                int height = LinearLayout.LayoutParams.MATCH_PARENT;
+
+                final PopupWindow popupWindow = new PopupWindow(popupView, width, height, true);
+
+                popupWindow.showAtLocation(view, Gravity.CENTER, 0, 0);
+
+                popupView.setOnTouchListener(new View.OnTouchListener() {
+                    @Override
+                    public boolean onTouch(View v, MotionEvent event) {
+                        popupWindow.dismiss();
+                        return true;
+                    }
+                });
+
+                saveBtn.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        updateData(object.getId(), text.getText().toString(), "unit");
+                        popupWindow.dismiss();
+                    }
+                });
+
+                deleteBtn.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        updateData(object.getId(), null, "unit");
+                        popupWindow.dismiss();
+                    }
+                });
 
             }
         });
@@ -249,7 +276,6 @@ public class MeasureUnitsSettingsFragment extends Fragment {
             return;
         }
 
-
         AsyncHttpClient client = new AsyncHttpClient();
         client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
 
@@ -272,6 +298,106 @@ public class MeasureUnitsSettingsFragment extends Fragment {
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
+            }
+        });
+    }
+
+
+    private void updateData(String id, String updateValue, String type){
+        final RequestPackage requestPackage = new RequestPackage();
+        requestPackage.setMethod(RequestType.POST);
+        if (type.equals("category")) {
+            requestPackage.setUrl("/categories/category/"+id);
+            if (updateValue != null){
+                requestPackage.setParam("category", updateValue);
+            }
+        }
+        else {
+            requestPackage.setUrl("/units/unit/"+id);
+            if (updateValue != null){
+                requestPackage.setParam("unit", updateValue);
+            }
+        }
+
+        ByteArrayEntity entity = null;
+        try {
+            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+
+
+        Log.i("SER", requestPackage.getFullUrl() + entity);
+        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
+
+        LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
+
+        if (loggedInUser == null){
+            startIntentLogIn();
+            return;
+        }
+        final MeasureUnitsSettingsFragment thisFragment = this;
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+
+        if (updateValue == null){
+            client.post(requestPackage.getFullUrl(), new AsyncHttpResponseHandler(){
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                    Log.i("Status", statusCode+"");
+                    try {
+                        JSONObject responseObject = new JSONObject(new String(responseBody));
+                        Log.i("Category response", responseObject.toString());
+                        thisFragment.requestData();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                    Log.i("Status", statusCode+"");
+                    if (statusCode == 403){
+                        Snackbar.make(getView(), "Необходимо заново авторизоваться", Snackbar.LENGTH_LONG)
+                                .setAction("Action", null).show();
+                        startIntentLogIn();
+                        return;
+                    }else {
+                        Snackbar.make(getView(), "Неизвестная ошибка! "+statusCode, Snackbar.LENGTH_LONG)
+                                .setAction("Action", null).show();
+
+                    }
+                }
+            });
+        }else client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                Log.i("Status", statusCode+"");
+                try {
+                    JSONObject responseObject = new JSONObject(new String(responseBody));
+                    Log.i("Category response", responseObject.toString());
+                    thisFragment.requestData();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                Log.i("Status", statusCode+"");
+                if (statusCode == 403){
+                    Snackbar.make(getView(), "Необходимо заново авторизоваться", Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+                    startIntentLogIn();
+                    return;
+                }else {
+                    Snackbar.make(getView(), "Неизвестная ошибка! "+statusCode, Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+
+                }
             }
         });
     }
