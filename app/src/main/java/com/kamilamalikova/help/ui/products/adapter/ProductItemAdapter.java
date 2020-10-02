@@ -1,7 +1,7 @@
-package com.kamilamalikova.help.ui.settings.adapter;
+package com.kamilamalikova.help.ui.products.adapter;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,35 +11,42 @@ import android.widget.TextView;
 import androidx.annotation.LayoutRes;
 
 import com.kamilamalikova.help.R;
-import com.kamilamalikova.help.model.SettingsObject;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class ItemAdapter extends BaseAdapter {
+public class ProductItemAdapter extends BaseAdapter {
     LayoutInflater mInflater;
     String[] items;
     String[] index;
+    String[] qty;
     @LayoutRes
     int layoutRes;
 
-    public ItemAdapter(Context c, String[] index, String[] items){
+    public ProductItemAdapter(Context c, String[] index, String[] items, String[] qty){
         this.index = index;
         this.items = items;
+        this.qty = qty;
         this.mInflater = (LayoutInflater)c.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        this.layoutRes = layoutRes;
     }
 
-    public ItemAdapter(Context c,JSONArray jsonArrayResponse, String itemName) throws JSONException {
+    public ProductItemAdapter(Context c, JSONArray jsonArrayResponse, @LayoutRes int layoutRes) throws JSONException {
         index = new String[jsonArrayResponse.length()];
         items = new String[jsonArrayResponse.length()];
+        qty = new String[jsonArrayResponse.length()];
         for (int i = 0; i < jsonArrayResponse.length(); i++) {
             JSONObject object = (JSONObject) jsonArrayResponse.get(i);
             index[i] = Integer.toString((int)object.get("id"));
-            items[i] = (String) object.get(itemName);
+            items[i] = (String) object.get("productName");
+            qty[i] = Double.toString((Double) object.get("inStockQty"));
         }
         this.mInflater = (LayoutInflater)c.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        this.layoutRes = layoutRes;
     }
+
+
     @Override
     public int getCount() {
         return items.length;
@@ -47,7 +54,7 @@ public class ItemAdapter extends BaseAdapter {
 
     @Override
     public Object getItem(int position) {
-        return new SettingsObject(index[position],items[position]);
+        return new ItemObject(index[position],items[position]);
     }
 
 
@@ -58,16 +65,18 @@ public class ItemAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        View v = mInflater.inflate(R.layout.list_detail, null);
-        TextView indexTextView = v.findViewById(R.id.itemIndexTextView);
-        TextView itemNameTextView = v.findViewById(R.id.itemNameTextView);
-
+        @SuppressLint("ViewHolder") View v = mInflater.inflate(this.layoutRes, null);
+        TextView indexTextView = v.findViewById(R.id.productIdItemTextView);
+        TextView itemNameTextView = v.findViewById(R.id.productNameItemTextView);
+        TextView itemQtyTextView = v.findViewById(R.id.productQtyItemTextView);
         String item = this.items[position];
         String index = this.index[position];
-
+        String qty = this.qty[position];
         indexTextView.setText(index);
         itemNameTextView.setText(item);
+        itemQtyTextView.setText(qty);
         return v;
     }
 
 }
+

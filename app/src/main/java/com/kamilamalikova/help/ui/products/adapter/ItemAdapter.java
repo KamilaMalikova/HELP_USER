@@ -1,7 +1,8 @@
-package com.kamilamalikova.help.ui.settings.adapter;
+package com.kamilamalikova.help.ui.products.adapter;
 
+
+import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,9 +29,10 @@ public class ItemAdapter extends BaseAdapter {
         this.index = index;
         this.items = items;
         this.mInflater = (LayoutInflater)c.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        this.layoutRes = layoutRes;
     }
 
-    public ItemAdapter(Context c,JSONArray jsonArrayResponse, String itemName) throws JSONException {
+    public ItemAdapter(Context c,JSONArray jsonArrayResponse, String itemName, @LayoutRes int layoutRes) throws JSONException {
         index = new String[jsonArrayResponse.length()];
         items = new String[jsonArrayResponse.length()];
         for (int i = 0; i < jsonArrayResponse.length(); i++) {
@@ -39,6 +41,7 @@ public class ItemAdapter extends BaseAdapter {
             items[i] = (String) object.get(itemName);
         }
         this.mInflater = (LayoutInflater)c.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        this.layoutRes = layoutRes;
     }
     @Override
     public int getCount() {
@@ -47,7 +50,7 @@ public class ItemAdapter extends BaseAdapter {
 
     @Override
     public Object getItem(int position) {
-        return new SettingsObject(index[position],items[position]);
+        return new ItemObject(index[position],items[position]);
     }
 
 
@@ -58,16 +61,15 @@ public class ItemAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        View v = mInflater.inflate(R.layout.list_detail, null);
-        TextView indexTextView = v.findViewById(R.id.itemIndexTextView);
-        TextView itemNameTextView = v.findViewById(R.id.itemNameTextView);
-
+        @SuppressLint("ViewHolder") View v = mInflater.inflate(this.layoutRes, null);
+        TextView indexTextView = v.findViewById(R.id.spinItemIndexTextView);
+        TextView itemNameTextView = v.findViewById(R.id.spinItemNameTextView);
         String item = this.items[position];
         String index = this.index[position];
-
         indexTextView.setText(index);
         itemNameTextView.setText(item);
         return v;
     }
 
 }
+

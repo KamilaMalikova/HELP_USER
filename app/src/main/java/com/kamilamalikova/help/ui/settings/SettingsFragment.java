@@ -41,7 +41,7 @@ public class SettingsFragment extends Fragment {
 
     private void addTabs(ViewPager viewPager) {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getChildFragmentManager());
-        adapter.addFrag(new CategorySettingsFragment(), getString(R.string.categoryName));
+        adapter.addFrag(new CategorySettingsFragment(), getString(R.string.categories));
         adapter.addFrag(new MeasureUnitsSettingsFragment(), getString(R.string.measeureUnits));
         viewPager.setAdapter(adapter);
     }

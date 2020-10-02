@@ -26,7 +26,7 @@
             android:autofillHints=""
             android:backgroundTint="#009688"
             android:ems="10"
-            android:hint="@string/categoty"
+            android:hint="@string/category"
             android:inputType="textPersonName"
             android:textColor="#009688"
             app:layout_constraintEnd_toEndOf="parent"
