@@ -1,5 +1,8 @@
 package com.kamilamalikova.help.model;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class Unit {
     private int id;
 
@@ -8,6 +11,11 @@ public class Unit {
     public Unit(int id, String unitName) {
         this.id = id;
         this.unitName = unitName;
+    }
+
+    public Unit(JSONObject unit) throws JSONException {
+        this.id = unit.getInt("id");
+        this.unitName = unit.getString("unitName");
     }
 
     public int getId() {

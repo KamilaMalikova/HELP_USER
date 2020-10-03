@@ -20,6 +20,15 @@
         <action
             android:id="@+id/action_product_to_add_product"
             app:destination="@+id/addProductFragment"/>
+        <action
+            android:id="@+id/start_products_detail"
+            app:destination="@+id/nav_product_detail">
+            <argument
+                android:name="id"
+                app:argType="long"
+                android:defaultValue="0L"
+            />
+        </action>
     </fragment>
 
     <fragment

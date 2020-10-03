@@ -1,8 +1,17 @@
 package com.kamilamalikova.help.model;
 
+import android.os.Build;
+import android.os.Parcel;
+import android.os.Parcelable;
+
+import androidx.annotation.RequiresApi;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.time.LocalDateTime;
 
-public class Product {
+public class Product implements Parcelable {
 
     protected long id;
 
@@ -21,6 +30,48 @@ public class Product {
     protected Category category;
 
     protected double cost;
+
+    public Product(long id, String productName, double inStockQty, boolean activeStatus, boolean restaurant, Unit unit, Category category, double cost) {
+        this.id = id;
+        this.productName = productName;
+        this.inStockQty = inStockQty;
+        this.activeStatus = activeStatus;
+        this.restaurant = restaurant;
+        this.unit = unit;
+        this.category = category;
+        this.cost = cost;
+    }
+
+    protected Product(Parcel in) {
+        id = in.readLong();
+        productName = in.readString();
+        inStockQty = in.readDouble();
+        activeStatus = in.readByte() != 0;
+        restaurant = in.readByte() != 0;
+        cost = in.readDouble();
+    }
+
+     public Product(JSONObject object) throws JSONException {
+        this.id = object.getInt("id");
+        this.productName = object.getString("productName");
+        this.inStockQty = object.getDouble("inStockQty");
+        this.activeStatus = object.getBoolean("activeStatus");
+        this.restaurant = object.getBoolean("restaurant");
+        this.unit = new Unit((JSONObject)object.get("unit"));
+        this.category = new Category((JSONObject)object.get("category"));
+    }
+
+    public static final Creator<Product> CREATOR = new Creator<Product>() {
+        @Override
+        public Product createFromParcel(Parcel in) {
+            return new Product(in);
+        }
+
+        @Override
+        public Product[] newArray(int size) {
+            return new Product[size];
+        }
+    };
 
     public long getId() {
         return id;
@@ -92,5 +143,22 @@ public class Product {
 
     public void setCost(double cost) {
         this.cost = cost;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeLong(this.id);
+        dest.writeString(this.productName);
+        dest.writeDouble(this.inStockQty);
+        dest.writeDouble(this.cost);
+        dest.writeValue(this.createdAt);
+        dest.writeValue(this.category);
+        dest.writeValue(this.unit);
+
     }
 }

@@ -73,6 +73,8 @@
     <string name="active">Активные</string>
     <string name="active_product">Активный продукт</string>
     <string name="product">Продукт</string>
+    <string name="edit">Редактировать</string>
+    <string name="done">Готово</string>
 
 
     <string-array name="categoriesSpinner">

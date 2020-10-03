@@ -127,10 +127,13 @@ public class ProductsFragment extends Fragment {
         productsListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                ProductDetailsFragment fragment = new ProductDetailsFragment();
-                
+                String productId = ((ItemObject)productsListView.getAdapter().getItem(position)).getId();
+                Bundle bundle = new Bundle();
+                bundle.putString("productId", productId);
+                Navigation.findNavController(view).navigate(R.id.nav_product_detail, bundle);
             }
         });
+
         requestData(URLs.GET_PRODUCTS.getName()+"/1", null, "0", true, true);
         return view;
     }
@@ -149,6 +152,7 @@ public class ProductsFragment extends Fragment {
             int height = LinearLayout.LayoutParams.MATCH_PARENT;
 
             popupWindow = new PopupWindow(popupView, width, height, true);
+            popupWindow.showAtLocation(thisView, Gravity.CENTER, 0, 0);
 
             categorySpinner = popupView.findViewById(R.id.filterCategorySpinner);
             requestSpinnerData(URLs.GET_CATEGORIES.getName(), categorySpinner, "category");
@@ -171,7 +175,6 @@ public class ProductsFragment extends Fragment {
                 }
             });
 
-            popupWindow.showAtLocation(thisView, Gravity.CENTER, 0, 0);
             popupView.setOnTouchListener(new View.OnTouchListener() {
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
