@@ -106,7 +106,7 @@ public class ProductsFragment extends Fragment {
         swipeView.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                requestData(URLs.GET_PRODUCTS.getName()+"/1", null, "0", true, true);
+                requestData(URLs.GET_PRODUCTS.getName(), null, "0", true, true);
                 swipeView.setRefreshing(false);
             }
         });
@@ -134,7 +134,7 @@ public class ProductsFragment extends Fragment {
             }
         });
 
-        requestData(URLs.GET_PRODUCTS.getName()+"/1", null, "0", true, true);
+        requestData(URLs.GET_PRODUCTS.getName(), null, "0", true, true);
         return view;
     }
 
@@ -170,7 +170,7 @@ public class ProductsFragment extends Fragment {
                     active = activeCheckBox.isChecked();
                     restaurant = restaurantCheckBox.isChecked();
 
-                    requestData(URLs.GET_PRODUCTS.getName()+"/1", productName, category, active, restaurant);
+                    requestData(URLs.GET_PRODUCTS.getName(), productName, category, active, restaurant);
                     popupWindow.dismiss();
                 }
             });
@@ -189,13 +189,13 @@ public class ProductsFragment extends Fragment {
     }
 
 
-    private void requestData(String url, String productName, String category, boolean active, boolean restaurant){
+    private void requestData(final String url, String productName, String category, boolean active, boolean restaurant){
         final RequestPackage requestPackage = new RequestPackage();
         requestPackage.setMethod(RequestType.GET);
         requestPackage.setUrl(url);
 
         if (productName != null) requestPackage.setParam("productName", productName);
-        if (!category.equals("0")) requestPackage.setParam("category", category);
+        if (!category.equals("0") && !(category.equals("500"))) requestPackage.setParam("category", category);
         if (!active) requestPackage.setParam("active", "0");
         if (!restaurant) requestPackage.setParam("restaurant", "0");
 
@@ -224,8 +224,13 @@ public class ProductsFragment extends Fragment {
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+"");
                 try {
-                    JSONObject responseObject = new JSONObject(new String(responseBody));
-                    JSONArray responseArray = (JSONArray)responseObject.get("content");
+                    JSONArray responseArray;
+                    if (url.endsWith(URLs.GET_PRODUCTS.getName())){
+                        responseArray = new JSONArray(new String(responseBody));
+                    }else {
+                        JSONObject responseObject = new JSONObject(new String(responseBody));
+                        responseArray = (JSONArray)responseObject.get("content");
+                    }
                     Log.i("response", responseArray.toString());
                     ProductItemAdapter itemAdapter = new ProductItemAdapter(getContext(), responseArray, R.layout.product_item);
                     productsListView.setAdapter(itemAdapter);
@@ -275,6 +280,7 @@ public class ProductsFragment extends Fragment {
                     Log.i("response", responseArray.toString());
                     ItemAdapter itemAdapter = new ItemAdapter(getContext(), responseArray, type, R.layout.spin_item);
                     spinner.setAdapter(itemAdapter);
+                    spinner.setSelection(spinner.getAdapter().getCount()-1);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }

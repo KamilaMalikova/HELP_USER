@@ -59,6 +59,21 @@
         android:label="@string/product"
         tools:layout="@layout/fragment_product_details" />
 
+    <fragment
+        android:id="@+id/nav_stock_product_add"
+        android:name="com.kamilamalikova.help.ui.stock.fragment.AddStockProductFragment"
+        android:label="@string/add"
+        tools:layout="@layout/fragment_add_stock_product" />
 
+    <fragment
+        android:id="@+id/nav_in_out_stock"
+        android:name="com.kamilamalikova.help.ui.stock.fragment.InOutStockFragment"
+        android:label="@string/in_out"
+        tools:layout="@layout/fragment_in_out_stock" />
 
+    <fragment
+        android:id="@+id/nav_add_in_out_stock_doc"
+        android:name="com.kamilamalikova.help.ui.stock.fragment.AddDocFragment"
+        android:label="@string/new_doc"
+        tools:layout="@layout/fragment_add_doc" />
 </navigation>

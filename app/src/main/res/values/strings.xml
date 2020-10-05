@@ -75,6 +75,14 @@
     <string name="product">Продукт</string>
     <string name="edit">Редактировать</string>
     <string name="done">Готово</string>
+    <string name="in_out">Приход/Расход</string>
+    <string name="in">Приход</string>
+    <string name="out">Расход</string>
+    <string name="add_to">Добавить в</string>
+    <string name="add_to_cart">Добавить в корзину</string>
+    <string name="new_doc">Новый документ</string>
+    <string name="choose_product">Выбрать продукт</string>
+    <string name="type">Тип</string>
 
 
     <string-array name="categoriesSpinner">

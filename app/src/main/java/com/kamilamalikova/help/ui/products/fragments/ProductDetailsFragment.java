@@ -188,8 +188,6 @@ public class ProductDetailsFragment extends Fragment {
         AsyncHttpClient client = new AsyncHttpClient();
         client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
 
-        final ProductDetailsFragment thisFragment = this;
-
         client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
@@ -219,7 +217,6 @@ public class ProductDetailsFragment extends Fragment {
             }
         });
     }
-
 
     private void requestData(String url) throws InterruptedException {
         final RequestPackage requestPackage = new RequestPackage();
@@ -275,8 +272,6 @@ public class ProductDetailsFragment extends Fragment {
             }
         });
     }
-
-
 
     private void requestSpinnerData(String url, final Spinner spinner, final String type){
         final RequestPackage requestPackage = new RequestPackage();

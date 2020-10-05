@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".ui.stock.fragment.AddStockProductFragment"
+    android:orientation="vertical">
+
+    <EditText
+        android:id="@+id/addStockProductNameTextEdit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginVertical="20dp"
+        android:layout_marginTop="16dp"
+        android:ems="10"
+        android:hint="@string/productName"
+        android:inputType="textPersonName"
+        android:textSize="20sp"
+        android:backgroundTint="#009688"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:importantForAutofill="no" />
+
+
+    <Spinner
+        android:id="@+id/categoryStockSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginVertical="20dp"
+        android:autofillHints="@string/category"
+        android:backgroundTint="#009688"
+        android:contentDescription="@string/category"
+        android:outlineProvider="bounds"
+        android:scrollbarStyle="outsideOverlay" />
+
+    <Spinner
+        android:id="@+id/unitStockSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginVertical="20dp"
+        android:autofillHints="@string/measureUnit"
+        android:backgroundTint="#009688"
+        android:contentDescription="@string/measureUnit"
+        android:spinnerMode="dropdown" />
+
+
+<!--    <EditText-->
+<!--        android:id="@+id/costTextNumberDecimal"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:hint="@string/cost"-->
+<!--        android:ems="10"-->
+<!--        android:backgroundTint="#009688"-->
+<!--        android:textSize="20sp"-->
+<!--        android:inputType="numberDecimal"-->
+<!--        android:layout_marginHorizontal="20dp"-->
+<!--        android:layout_marginVertical="20dp"-->
+<!--        android:importantForAutofill="no" />-->
+
+<!--    <EditText-->
+<!--        android:id="@+id/quantityTextNumberDecimal"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:hint="@string/quantity"-->
+<!--        android:ems="10"-->
+<!--        android:textSize="20sp"-->
+<!--        android:backgroundTint="#009688"-->
+<!--        android:inputType="numberDecimal"-->
+<!--        android:layout_marginHorizontal="20dp"-->
+<!--        android:layout_marginVertical="20dp"-->
+<!--        android:importantForAutofill="no" />-->
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/addStockRestaurantSwitchCompat"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="20dp"
+        android:text="@string/for_sale"
+        android:textSize="20sp" />
+
+    <Button
+        android:id="@+id/addStockProductSaveBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginVertical="30dp"
+        android:background="@drawable/button_border"
+        android:text="@string/save"
+        android:paddingHorizontal="10dp"/>
+
+</LinearLayout>

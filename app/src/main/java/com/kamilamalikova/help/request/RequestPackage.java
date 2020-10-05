@@ -1,7 +1,9 @@
 package com.kamilamalikova.help.request;
 
+import com.kamilamalikova.help.model.StockItemBalance;
 import com.loopj.android.http.RequestParams;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
@@ -23,6 +25,7 @@ public class RequestPackage {
     private Map<String, String> params = new HashMap<>();
 
     private String authorizationToken = "";
+
 
 
     public String getUrl() {
@@ -66,6 +69,29 @@ public class RequestPackage {
         return new JSONObject(params);
     }
 
+    public JSONObject getJsonObject(StockItemBalance stockItemBalance) throws JSONException {
+        return new JSONObject(createStockItemJson(stockItemBalance));
+    }
+
+
+    private String createStockItemJson(StockItemBalance stockItemBalance){
+        String json = "{" +
+                "\"id\":"+ stockItemBalance.getId() +","+
+                "\"name\" :"+ "\""+stockItemBalance.getName() +"\","+
+                "\"unit\":"+ "{"+
+                        "\"id\":"+ stockItemBalance.getUnit().getId()+ ","+
+                        "\"unitName\":"+ "\""+stockItemBalance.getUnit().getUnitName()+"\""+
+                "},"+
+                "\"category\":"+ "{"+
+                        "\"id\":"+ stockItemBalance.getCategory().getId()+","+
+                        "\"category\":"+ "\""+stockItemBalance.getCategory().getCategory()+"\"" +
+                "},"+
+                "\"inStockQty\":"+ 0+","+
+                "\"productId\":"+ 0+","+
+                "\"restaurant\":" +stockItemBalance.isRestaurant()+
+                "}";
+        return json;
+    }
     public String getEncodedParams(){
         if (!method.equals(RequestType.GET)) return url;
 

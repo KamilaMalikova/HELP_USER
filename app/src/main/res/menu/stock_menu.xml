@@ -2,8 +2,8 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/filter"
-        android:title="@string/filter"
-        app:showAsAction="always"
-        android:icon="@drawable/ic_baseline_filter_list_24" />
+        android:id="@+id/in_out_doc"
+        android:icon="@drawable/ic_shopping_basket_24"
+        android:title="@string/in_out"
+        app:showAsAction="always" />
 </menu>

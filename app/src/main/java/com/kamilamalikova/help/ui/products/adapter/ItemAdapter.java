@@ -33,13 +33,16 @@ public class ItemAdapter extends BaseAdapter {
     }
 
     public ItemAdapter(Context c,JSONArray jsonArrayResponse, String itemName, @LayoutRes int layoutRes) throws JSONException {
-        index = new String[jsonArrayResponse.length()];
-        items = new String[jsonArrayResponse.length()];
-        for (int i = 0; i < jsonArrayResponse.length(); i++) {
+        index = new String[jsonArrayResponse.length()+1];
+        items = new String[jsonArrayResponse.length()+1];
+        int i = 0;
+        for ( ; i < jsonArrayResponse.length(); i++) {
             JSONObject object = (JSONObject) jsonArrayResponse.get(i);
             index[i] = Integer.toString((int)object.get("id"));
             items[i] = (String) object.get(itemName);
         }
+        index[i] = "500";
+        items[i] = "";
         this.mInflater = (LayoutInflater)c.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         this.layoutRes = layoutRes;
     }

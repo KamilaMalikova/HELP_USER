@@ -51,6 +51,23 @@ public class ProductItemAdapter extends BaseAdapter {
         this.layoutRes = layoutRes;
     }
 
+    public ProductItemAdapter(Context c, JSONArray jsonArrayResponse, String productName, @LayoutRes int layoutRes) throws JSONException {
+        index = new String[jsonArrayResponse.length()];
+        items = new String[jsonArrayResponse.length()];
+        qty = new String[jsonArrayResponse.length()];
+        unit = new String[jsonArrayResponse.length()];
+        for (int i = 0; i < jsonArrayResponse.length(); i++) {
+            JSONObject object = (JSONObject) jsonArrayResponse.get(i);
+            index[i] = Integer.toString((int)object.get("id"));
+            items[i] = (String) object.get(productName);
+            qty[i] = Double.toString((Double) object.get("inStockQty"));
+            JSONObject unitObject = (JSONObject) object.get("unit");
+            unit[i] = unitObject.getString("unitName");
+        }
+        this.mInflater = (LayoutInflater)c.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        this.layoutRes = layoutRes;
+    }
+
 
     @Override
     public int getCount() {
