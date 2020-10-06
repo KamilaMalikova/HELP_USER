@@ -12,6 +12,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.jakewharton.threetenabp.AndroidThreeTen;
 import com.kamilamalikova.help.jwt.Jwt;
 import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.request.RequestPackage;
@@ -43,7 +44,6 @@ public class LogInActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_log_in);
         usernameTextEdit = (EditText)findViewById(R.id.usernameTextEdit);
         passwordTextEdit = (EditText)findViewById(R.id.passwordTextEdit);

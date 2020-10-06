@@ -1,14 +1,22 @@
 package com.kamilamalikova.help.request;
 
+import android.os.Build;
+
+import androidx.annotation.RequiresApi;
+
+import com.kamilamalikova.help.model.StockDocument;
 import com.kamilamalikova.help.model.StockItemBalance;
+import com.kamilamalikova.help.ui.stock.adapter.ProductItemObject;
 import com.loopj.android.http.RequestParams;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class RequestPackage {
@@ -92,6 +100,33 @@ public class RequestPackage {
                 "}";
         return json;
     }
+
+    public JSONArray getStockInventoryJSONArray(StockDocument stockDocument, List<ProductItemObject> itemObjects) throws JSONException {
+        JSONArray jsonArray = new JSONArray();
+        for (ProductItemObject itemObject:itemObjects) {
+            jsonArray.put(createInventoryObject(stockDocument, itemObject));
+        }
+        return jsonArray;
+    }
+
+    private JSONObject createInventoryObject(StockDocument stockDocument, ProductItemObject itemObject) throws JSONException {
+        String json = "{\n" +
+                "    \"id\": 0,\n" +
+                "    \"stockDocument\": {\n" +
+                "      \"documentId\": "+stockDocument.getDocumentId()+",\n" +
+                "      \"documentType\": \""+stockDocument.getDocumentType()+"\",\n" +
+                "      \"date\": \""+stockDocument.getDate()+"\",\n" +
+                "      \"inventories\": [\n" +
+                "        null\n" +
+                "      ]\n" +
+                "    },\n" +
+                "    \"productId\": "+itemObject.getId()+",\n" +
+                "    \"productName\": \""+itemObject.getProductName()+"\",\n" +
+                "    \"amount\": "+itemObject.getQty()+"\n" +
+                "  }";
+        return new JSONObject(json);
+    }
+
     public String getEncodedParams(){
         if (!method.equals(RequestType.GET)) return url;
 

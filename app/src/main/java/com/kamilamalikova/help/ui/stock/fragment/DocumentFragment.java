@@ -1,54 +1,67 @@
-package com.kamilamalikova.help.ui.stock;
+package com.kamilamalikova.help.ui.stock.fragment;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Spinner;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.jakewharton.threetenabp.AndroidThreeTen;
 import com.kamilamalikova.help.LogInActivity;
 import com.kamilamalikova.help.R;
+import com.kamilamalikova.help.model.DOCTYPE;
 import com.kamilamalikova.help.model.FileStream;
 import com.kamilamalikova.help.model.LoggedInUser;
+import com.kamilamalikova.help.model.StockDocument;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
-import com.kamilamalikova.help.ui.products.adapter.ItemAdapter;
-import com.kamilamalikova.help.ui.products.adapter.ProductItemAdapter;
+import com.kamilamalikova.help.ui.stock.adapter.DocTypeAdapter;
+import com.kamilamalikova.help.ui.stock.adapter.DocTypeObject;
+import com.kamilamalikova.help.ui.stock.adapter.ProductItemAdapter;
+import com.kamilamalikova.help.ui.stock.adapter.ProductItemObject;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import org.threeten.bp.LocalDateTime;
+import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.ByteArrayEntity;
 import cz.msebera.android.httpclient.message.BasicHeader;
 import cz.msebera.android.httpclient.protocol.HTTP;
 
-public class StockFragment extends Fragment {
 
-    volatile View view;
-    ListView productListView;
+public class DocumentFragment extends Fragment {
 
-    public StockFragment() {
+    View view;
+    Spinner docTypeSpinner;
+    ListView docInventoryFinalListView;
+
+    DocTypeObject docTypeObject;
+    ArrayList<ProductItemObject> productItemObjectList;
+
+    Button saveBtn;
+
+
+    public DocumentFragment() {
         // Required empty public constructor
     }
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -58,46 +71,46 @@ public class StockFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        String docTypeId[] = new String[]{"1", "2"};
+        String docTypeName[] = new String[]{getString(R.string.in), getString(R.string.out)};
 
-        view = inflater.inflate(R.layout.fragment_stock, container, false);
-        productListView = view.findViewById(R.id.stockProductsListView);
-        requestData(URLs.GET_ITEMS.getName(), null, "500", "");
+        this.docTypeObject = getArguments().getParcelable("doctype");
+        this.productItemObjectList =getArguments().getParcelableArrayList("inventories");
 
-        final SwipeRefreshLayout swipeAndRefresh = view.findViewById(R.id.stockProductsListSwipe);
+        this.view = inflater.inflate(R.layout.fragment_document, container, false);
+        AndroidThreeTen.init(getContext());
 
-        swipeAndRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                requestData(URLs.GET_ITEMS.getName(), null, "500", "");
-                swipeAndRefresh.setRefreshing(false);
-            }
-        });
+        docTypeSpinner = view.findViewById(R.id.docTypeFinalSpinner);
+        DocTypeAdapter docTypeAdapter = new DocTypeAdapter(docTypeId, docTypeName, getContext(), R.layout.spin_item);
+        docTypeSpinner.setAdapter(docTypeAdapter);
+        docTypeSpinner.setSelection(Integer.parseInt(docTypeObject.getId())-1);
 
-        FloatingActionButton fab = view.findViewById(R.id.fabAddStockProduct);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @SuppressLint("ResourceType")
+        this.docInventoryFinalListView = view.findViewById(R.id.docInventoryFinalListView);
+        ProductItemAdapter productItemAdapter = new ProductItemAdapter(getContext(), this.productItemObjectList);
+        this.docInventoryFinalListView.setAdapter(productItemAdapter);
+
+        this.saveBtn = view.findViewById(R.id.saveDocBtn);
+
+        this.saveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try {
-                    Navigation.findNavController(view).navigate(R.id.nav_stock_product_add);
-                }catch (Exception e){
-                    e.printStackTrace();
-                }
+                String type;
+                if (docTypeObject.getId().equals("1")) type = DOCTYPE.IN.getName();
+                        else type = DOCTYPE.OUT.getName();
+                saveDocument(0, type, LocalDateTime.now());
             }
         });
-        return view;
+        return this.view;
     }
 
-    private void requestData(final String url, String productName, String categoryId, String category){
+    private void saveDocument(int docId, String docType, LocalDateTime time){
         final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.GET);
-        requestPackage.setUrl(url);
+        requestPackage.setMethod(RequestType.POST);
+        requestPackage.setUrl(URLs.POST_DOC.getName());
 
-        if (productName != null) requestPackage.setParam("name", productName);
-        if (!categoryId.equals("0") && !(categoryId.equals("500"))) {
-            requestPackage.setParam("id", categoryId);
-            requestPackage.setParam("category", category);
-        }
+        requestPackage.setParam("documentId", Integer.toString(docId));
+        requestPackage.setParam("documentType", docType);
+        requestPackage.setParam("date", time.toString());
 
 
         ByteArrayEntity entity = null;
@@ -108,6 +121,7 @@ public class StockFragment extends Fragment {
         }
         entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
 
+
         Log.i("SER", requestPackage.getFullUrl() + entity);
         Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
 
@@ -117,28 +131,21 @@ public class StockFragment extends Fragment {
             startIntentLogIn();
             return;
         }
+
         AsyncHttpClient client = new AsyncHttpClient();
         client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
-
-        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+        client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                Log.i("Status", statusCode+"");
                 try {
-                    JSONArray responseArray;
-                    if (url.endsWith(URLs.GET_ITEMS.getName())){
-                        responseArray = new JSONArray(new String(responseBody));
-                    }else {
-                        JSONObject responseObject = new JSONObject(new String(responseBody));
-                        responseArray = (JSONArray)responseObject.get("content");
-                    }
-                    Log.i("response", responseArray.toString());
-                    ProductItemAdapter itemAdapter = new ProductItemAdapter(getContext(), responseArray, "name", R.layout.product_item);
-                    productListView.setAdapter(itemAdapter);
+                    JSONObject responseObject = new JSONObject(new String(responseBody));
+                    StockDocument stockDocument = new StockDocument(responseObject);
+                    saveInventory(stockDocument, productItemObjectList);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }
+
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
@@ -146,40 +153,39 @@ public class StockFragment extends Fragment {
         });
     }
 
-    private void requestSpinnerData(String url, final Spinner spinner, final String type){
+    private void saveInventory(StockDocument stockDocument, List<ProductItemObject> productItemObjects){
         final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.GET);
-        requestPackage.setUrl(url);
+        requestPackage.setMethod(RequestType.POST);
+        requestPackage.setUrl(URLs.POST_INVENTORY.getName()+"/"+stockDocument.getDocumentId());
+
+
         ByteArrayEntity entity = null;
         try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
+            entity = new ByteArrayEntity(requestPackage.getStockInventoryJSONArray(stockDocument, productItemObjectList).toString().getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException | JSONException e) {
             e.printStackTrace();
         }
         entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+
 
         Log.i("SER", requestPackage.getFullUrl() + entity);
         Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
 
         LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
-
         if (loggedInUser == null){
             startIntentLogIn();
             return;
         }
         AsyncHttpClient client = new AsyncHttpClient();
         client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
-
-        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+        client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                Log.i("Status", statusCode+"");
                 try {
-                    JSONArray responseArray = new JSONArray(new String(responseBody));
-                    Log.i("response", responseArray.toString());
-                    ItemAdapter itemAdapter = new ItemAdapter(getContext(), responseArray, type, R.layout.spin_item);
-                    spinner.setAdapter(itemAdapter);
-                    spinner.setSelection(spinner.getAdapter().getCount()-1);
+                    JSONObject responseObject = new JSONObject(new String(responseBody));
+                    StockDocument resultDocument = new StockDocument(responseObject);
+                    Log.i("Response", responseObject.toString());
+                    Navigation.findNavController(view).navigate(R.id.nav_in_out_stock);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }

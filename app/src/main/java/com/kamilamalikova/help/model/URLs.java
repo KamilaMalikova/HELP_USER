@@ -7,7 +7,9 @@ public enum  URLs {
     GET_PRODUCT("/products/product"),
     POST_PRODUCT_UPDATE("/products/product"),
     POST_ITEMS("/items"),
-    GET_ITEMS("/items");
+    GET_ITEMS("/items"),
+    POST_DOC("/documents"),
+    POST_INVENTORY("/inventory");
 
     String name;
 

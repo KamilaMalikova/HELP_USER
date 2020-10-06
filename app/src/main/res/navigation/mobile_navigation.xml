@@ -76,4 +76,10 @@
         android:name="com.kamilamalikova.help.ui.stock.fragment.AddDocFragment"
         android:label="@string/new_doc"
         tools:layout="@layout/fragment_add_doc" />
+
+    <fragment
+        android:id="@+id/nav_in_out_stock_doc"
+        android:name="com.kamilamalikova.help.ui.stock.fragment.DocumentFragment"
+        android:label="@string/document"
+        tools:layout="@layout/fragment_document" />
 </navigation>

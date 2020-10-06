@@ -83,6 +83,8 @@
     <string name="new_doc">Новый документ</string>
     <string name="choose_product">Выбрать продукт</string>
     <string name="type">Тип</string>
+    <string name="form_document">Сформировать документ</string>
+    <string name="document">Документ</string>
 
 
     <string-array name="categoriesSpinner">

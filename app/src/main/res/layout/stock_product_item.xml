@@ -16,21 +16,30 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        android:layout_marginStart="17dp"
+        android:layout_marginHorizontal="10dp"
         android:layout_marginTop="15dp"
-        android:layout_marginEnd="35dp"
+        android:textSize="24dp"
         android:layout_toStartOf="@+id/stockDocQtyTextView"
         android:layout_toEndOf="@+id/stockDocProductCheckBox"
         android:text="TextView" />
 
-    <TextView
+    <EditText
         android:id="@+id/stockDocQtyTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="84dp"
-        android:text="TextView" />
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginVertical="10dp"
+        android:text="TextView"
+        android:textSize="24dp"
+        android:inputType="numberDecimal"/>
+
+    <TextView
+        android:id="@+id/stockDocIdTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="invisible"/>
+
 
 </RelativeLayout>

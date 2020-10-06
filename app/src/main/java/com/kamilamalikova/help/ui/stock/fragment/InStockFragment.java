@@ -13,7 +13,7 @@ import com.kamilamalikova.help.R;
 
 public class InStockFragment extends Fragment {
 
-
+    View view;
     public InStockFragment() {
         // Required empty public constructor
     }
@@ -29,6 +29,8 @@ public class InStockFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_in_stock, container, false);
+        view = inflater.inflate(R.layout.fragment_in_stock, container, false);
+        
+        return view;
     }
 }
