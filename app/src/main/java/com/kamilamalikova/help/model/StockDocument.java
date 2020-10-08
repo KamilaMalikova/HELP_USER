@@ -37,6 +37,12 @@ public class StockDocument {
 
     }
 
+    public StockDocument(int docId, String type, LocalDateTime date) {
+        this.documentId = documentId;
+        this.documentType = documentType;
+        this.date = date;
+    }
+
     public long getDocumentId() {
         return documentId;
     }

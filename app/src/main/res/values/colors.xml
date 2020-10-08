@@ -5,4 +5,5 @@
     <color name="colorAccent">#03DAC5</color>
     <color name="dialog">#E4CBE1DF</color>
     <color name="dialog2">#FFEDDDDC</color>
+    <color name="main_color">#009688</color>
 </resources>

@@ -117,7 +117,6 @@ public class ProductItemAdapter extends BaseAdapter {
                     );
                     return true;
                 }
-                else Log.i("Input test", actionId+" - "+event.getAction()+"");
                 return false;
             }
         });

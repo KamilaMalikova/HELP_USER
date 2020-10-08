@@ -13,10 +13,13 @@
             android:id="@+id/inStockSwipe"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content">
-            <ListView
+
+            <ExpandableListView
                 android:id="@+id/inStockListView"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:headerDividersEnabled="true"
+                android:paddingVertical="10dp"/>
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
     </LinearLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

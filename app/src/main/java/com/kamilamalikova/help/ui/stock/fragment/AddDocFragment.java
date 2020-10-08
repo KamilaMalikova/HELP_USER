@@ -120,7 +120,7 @@ public class AddDocFragment extends Fragment {
                        Bundle bundle = new Bundle();
                        bundle.putParcelable ("doctype", (DocTypeObject)docTypeSpinner.getSelectedItem());
                        bundle.putParcelableArrayList("inventories",  productList);
-
+                       hideKeyboard(getContext());
                        Navigation.findNavController(view).navigate(R.id.nav_in_out_stock_doc, bundle);
                    }else {
                        Toast.makeText(getContext(), "Необходимо добавить как минимум один продукт", Toast.LENGTH_LONG)

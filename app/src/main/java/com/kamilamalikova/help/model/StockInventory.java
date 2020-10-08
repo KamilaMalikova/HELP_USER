@@ -1,5 +1,8 @@
 package com.kamilamalikova.help.model;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class StockInventory {
 
     private long productId;
@@ -12,6 +15,12 @@ public class StockInventory {
         this.productId = productId;
         this.productName = productName;
         this.amount = amount;
+    }
+
+    public StockInventory(JSONObject inventory) throws JSONException {
+        this.productId = inventory.getLong("productId");
+        this.productName = inventory.getString("productName");
+        this.amount = inventory.getDouble("amount");
     }
 
     public long getProductId() {

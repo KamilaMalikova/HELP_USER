@@ -14,12 +14,14 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.jakewharton.threetenabp.AndroidThreeTen;
 import com.kamilamalikova.help.LogInActivity;
 import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.DOCTYPE;
 import com.kamilamalikova.help.model.FileStream;
+import com.kamilamalikova.help.model.Keyboard;
 import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.model.StockDocument;
 import com.kamilamalikova.help.model.URLs;
@@ -95,7 +97,7 @@ public class DocumentFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 String type;
-                if (docTypeObject.getId().equals("1")) type = DOCTYPE.IN.getName();
+                if (((DocTypeObject)docTypeSpinner.getSelectedItem()).getId().equals("1")) type = DOCTYPE.IN.getName();
                         else type = DOCTYPE.OUT.getName();
                 saveDocument(0, type, LocalDateTime.now());
             }
@@ -140,6 +142,11 @@ public class DocumentFragment extends Fragment {
                 try {
                     JSONObject responseObject = new JSONObject(new String(responseBody));
                     StockDocument stockDocument = new StockDocument(responseObject);
+                    productItemObjectList.clear();
+                    for (int i = 0; i < docInventoryFinalListView.getAdapter().getCount(); i++){
+                        ProductItemObject itemObject = (ProductItemObject) docInventoryFinalListView.getAdapter().getItem(i);
+                        if (itemObject.isChosen()) productItemObjectList.add(itemObject);
+                    }
                     saveInventory(stockDocument, productItemObjectList);
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -148,6 +155,16 @@ public class DocumentFragment extends Fragment {
 
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                switch (statusCode){
+                    case 406:
+                        Toast.makeText(getContext(), statusCode+ "! На складе не достаточно продуктов для расходования", Toast.LENGTH_LONG)
+                                .show();
+                        break;
+                    default:
+                        Toast.makeText(getContext(), statusCode+"! Ошибка", Toast.LENGTH_LONG)
+                            .show();
+                        break;
+                }
                 Log.i("Status", statusCode+"");
             }
         });
@@ -185,6 +202,7 @@ public class DocumentFragment extends Fragment {
                     JSONObject responseObject = new JSONObject(new String(responseBody));
                     StockDocument resultDocument = new StockDocument(responseObject);
                     Log.i("Response", responseObject.toString());
+                    Keyboard.hideKeyboard(getContext());
                     Navigation.findNavController(view).navigate(R.id.nav_in_out_stock);
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -192,7 +210,18 @@ public class DocumentFragment extends Fragment {
             }
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                Log.i("Status", statusCode+"");
+                switch (statusCode){
+                    case 406:
+                    case 404:
+                        Toast.makeText(getContext(), statusCode+ "! На складе не достаточно продуктов для расходования", Toast.LENGTH_LONG)
+                                .show();
+                        break;
+                    default:
+                        Toast.makeText(getContext(), statusCode+"! "+new String(responseBody), Toast.LENGTH_LONG)
+                                .show();
+                        break;
+
+                }
             }
         });
     }

@@ -1,7 +1,11 @@
 package com.kamilamalikova.help.model;
 
+import android.app.Activity;
+import android.content.Context;
 import android.os.Parcel;
 import android.os.Parcelable;
+
+import androidx.appcompat.app.ActionBarDrawerToggle;
 
 import java.io.Serializable;
 
@@ -112,5 +116,16 @@ public class LoggedInUser implements Parcelable, Serializable{
         dest.writeString(displayName);
         dest.writeString(username);
         dest.writeString(roleString);
+    }
+
+
+    public static LoggedInUser isLoggedIn(Context context, Activity activity){
+        LoggedInUser loggedInUser = new FileStream().readUser(activity.getDir("data", Context.MODE_PRIVATE));
+
+        if (loggedInUser == null){
+            StartIntent.startIntentLogIn(context, activity);
+            return null;
+        }
+        else return loggedInUser;
     }
 }
