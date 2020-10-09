@@ -85,6 +85,9 @@
     <string name="type">Тип</string>
     <string name="form_document">Сформировать документ</string>
     <string name="document">Документ</string>
+    <string name="start">Начало</string>
+    <string name="end">Конец</string>
+    <string name="start_new_order">Начать новый заказ?</string>
 
 
     <string-array name="categoriesSpinner">

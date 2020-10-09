@@ -71,7 +71,7 @@ public class OutStockFragment extends Fragment {
     }
 
 
-    private void requestData(final String url, String type, LocalDateTime from, LocalDateTime to){
+    public void requestData(final String url, String type, LocalDateTime from, LocalDateTime to){
         final RequestPackage requestPackage = new RequestPackage();
         requestPackage.setMethod(RequestType.GET);
         requestPackage.setUrl(url);

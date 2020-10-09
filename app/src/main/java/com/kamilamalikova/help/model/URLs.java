@@ -10,7 +10,8 @@ public enum  URLs {
     GET_ITEMS("/items"),
     POST_DOC("/documents"),
     POST_INVENTORY("/inventory"),
-    GET_DOCS("/documents");
+    GET_DOCS("/documents"),
+    GET_TABLES("/tables");
 
     String name;
 
