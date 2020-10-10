@@ -73,6 +73,40 @@ public class StockDocAdapter extends BaseExpandableListAdapter {
         this.context = context;
     }
 
+    public void init(){
+        this.stockDocIdList = new ArrayList<>();
+        this.stockDocTypeList = new ArrayList<>();
+        this.stockDocDateTimeList = new ArrayList<>();
+        this.inventoriesList = new HashMap<>();
+
+    }
+
+    public StockDocAdapter(Context context){
+        this.stockDocIdList = new ArrayList<>();
+        this.stockDocTypeList = new ArrayList<>();
+        this.stockDocDateTimeList = new ArrayList<>();
+        this.inventoriesList = new HashMap<>();
+
+        this.mInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        this.context = context;
+    }
+
+    public void add(JSONArray responseArray) throws JSONException {
+        for (int i = 0; i < responseArray.length(); i++) {
+            JSONObject jsonObject = responseArray.getJSONObject(i);
+            stockDocIdList.add(jsonObject.getInt("documentId"));
+            stockDocTypeList.add(jsonObject.getString("documentType"));
+            stockDocDateTimeList.add(LocalDateTime.parse(jsonObject.getString("date")));
+
+            JSONArray inventoriesJsonArray = jsonObject.getJSONArray("inventories");
+            List<StockInventory> inventories = new ArrayList<>();
+            for (int j = 0; j < inventoriesJsonArray.length(); j++) {
+                JSONObject inventory = inventoriesJsonArray.getJSONObject(j);
+                inventories.add(new StockInventory(inventory));
+            }
+            inventoriesList.put(jsonObject.getInt("documentId"), inventories);
+        }
+    }
 
     @Override
     public int getGroupCount() {

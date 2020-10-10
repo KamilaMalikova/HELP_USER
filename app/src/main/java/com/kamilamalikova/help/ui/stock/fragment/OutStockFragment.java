@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.ExpandableListView;
 import android.widget.ListView;
 
+import com.jakewharton.threetenabp.AndroidThreeTen;
 import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.DOCTYPE;
 import com.kamilamalikova.help.model.LoggedInUser;
@@ -39,6 +40,9 @@ public class OutStockFragment extends Fragment {
 
     ExpandableListView outStockListView;
 
+    LocalDateTime to;
+    LocalDateTime from;
+
     public OutStockFragment() {
         // Required empty public constructor
     }
@@ -53,17 +57,21 @@ public class OutStockFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        AndroidThreeTen.init(getContext());
+        to = LocalDateTime.now();
+        from = LocalDateTime.of(to.getYear(), to.getMonth().getValue()-1, to.getDayOfMonth(), 0, 0);
+
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_out_stock, container, false);
 
         outStockListView = view.findViewById(R.id.outStockListView);
-        requestData(URLs.GET_DOCS.getName()+"/1", DOCTYPE.OUT.getName(), null, null);
+        requestData(URLs.GET_DOCS.getName()+"/0", DOCTYPE.OUT.getName(), from, to);
 
         final SwipeRefreshLayout swipeRefresh = view.findViewById(R.id.outStockSwipe);
         swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                requestData(URLs.GET_DOCS.getName()+"/1", DOCTYPE.OUT.getName(), null, null);
+                requestData(URLs.GET_DOCS.getName()+"/0", DOCTYPE.OUT.getName(), from, to);
                 swipeRefresh.setRefreshing(false);
             }
         });

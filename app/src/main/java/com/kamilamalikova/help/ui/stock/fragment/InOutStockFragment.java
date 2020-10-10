@@ -206,8 +206,8 @@ public class InOutStockFragment extends Fragment {
             filterBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    inStockFragment.requestData(URLs.GET_DOCS.getName()+"/1", DOCTYPE.IN.getName(), start, end);
-                    outStockFragment.requestData(URLs.GET_DOCS.getName()+"/1", DOCTYPE.OUT.getName(), start, end);
+                    inStockFragment.requestData(URLs.GET_DOCS.getName()+"/0", DOCTYPE.IN.getName(), start, end);
+                    outStockFragment.requestData(URLs.GET_DOCS.getName()+"/0", DOCTYPE.OUT.getName(), start, end);
                     popupWindow.dismiss();
                 }
             });

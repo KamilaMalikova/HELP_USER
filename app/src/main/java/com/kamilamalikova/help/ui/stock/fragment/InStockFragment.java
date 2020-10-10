@@ -10,9 +10,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.ExpandableListView;
 import android.widget.ListView;
 
+import com.jakewharton.threetenabp.AndroidThreeTen;
 import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.DOCTYPE;
 import com.kamilamalikova.help.model.FileStream;
@@ -42,8 +44,15 @@ import cz.msebera.android.httpclient.protocol.HTTP;
 public class InStockFragment extends Fragment {
 
     View view;
-
+    LocalDateTime to;
+    LocalDateTime from;
     ExpandableListView inStockListView;
+
+    StockDocAdapter docAdapter;
+
+    private static final int PAGE_START = 0;
+    private int currentPage = PAGE_START;
+
     public InStockFragment() {
         // Required empty public constructor
     }
@@ -58,16 +67,23 @@ public class InStockFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        AndroidThreeTen.init(getContext());
+        to = LocalDateTime.now();
+        from = LocalDateTime.of(to.getYear(), to.getMonth().getValue()-1, to.getDayOfMonth(), 0, 0);
+
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_in_stock, container, false);
         inStockListView = view.findViewById(R.id.inStockListView);
-        requestData(URLs.GET_DOCS.getName()+"/1", DOCTYPE.IN.getName(), null, null);
+        requestData(URLs.GET_DOCS.getName()+"/"+currentPage, DOCTYPE.IN.getName(), from, to);
+
+        docAdapter = new StockDocAdapter(getContext());
 
         final SwipeRefreshLayout swipeRefresh = view.findViewById(R.id.inStockSwipe);
         swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                requestData(URLs.GET_DOCS.getName()+"/1", DOCTYPE.IN.getName(), null, null);
+                docAdapter.init();
+                requestData(URLs.GET_DOCS.getName()+"/"+currentPage, DOCTYPE.IN.getName(), from, to);
                 swipeRefresh.setRefreshing(false);
             }
         });
@@ -114,7 +130,8 @@ public class InStockFragment extends Fragment {
                         responseArray = (JSONArray)responseObject.get("content");
                     }
                     Log.i("response", responseArray.toString());
-                    StockDocAdapter docAdapter = new StockDocAdapter(getContext(), responseArray);
+                    docAdapter.init();
+                    docAdapter.add(responseArray);
                     inStockListView.setAdapter(docAdapter);
                     docAdapter.notifyDataSetChanged();
                 } catch (JSONException e) {
