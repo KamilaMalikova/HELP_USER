@@ -14,6 +14,7 @@ import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.ui.settings.adapter.ViewPagerAdapter;
 import com.kamilamalikova.help.ui.settings.tabfragments.CategorySettingsFragment;
 import com.kamilamalikova.help.ui.settings.tabfragments.MeasureUnitsSettingsFragment;
+import com.kamilamalikova.help.ui.settings.tabfragments.TablesSettingsFragment;
 
 
 public class SettingsFragment extends Fragment {
@@ -43,6 +44,7 @@ public class SettingsFragment extends Fragment {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getChildFragmentManager());
         adapter.addFrag(new CategorySettingsFragment(), getString(R.string.categories));
         adapter.addFrag(new MeasureUnitsSettingsFragment(), getString(R.string.measeureUnits));
+        adapter.addFrag(new TablesSettingsFragment(), getString(R.string.tables));
         viewPager.setAdapter(adapter);
     }
 

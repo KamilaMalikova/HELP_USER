@@ -80,11 +80,7 @@ public class CategorySettingsFragment extends Fragment {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
                 final SettingsObject object = (SettingsObject)categoryListView.getAdapter().getItem(position);
-
-
-                final View popupView =
-                        //EditingSettingsFragment.newInstance(object.getId(), object.getValue(), "category");
-                        inflater.inflate(R.layout.fragment_editing_settings, null);
+                final View popupView = inflater.inflate(R.layout.fragment_editing_settings, null);
                 text = popupView.findViewById(R.id.valueSettingTextEdit);
                 text.setText(object.getValue());
 
@@ -98,19 +94,15 @@ public class CategorySettingsFragment extends Fragment {
 
 
                 int width = LinearLayout.LayoutParams.MATCH_PARENT;
-                int height = LinearLayout.LayoutParams.MATCH_PARENT;
+                int height = LinearLayout.LayoutParams.WRAP_CONTENT;
+
 
                 final PopupWindow popupWindow = new PopupWindow(popupView, width, height, true);
-
+                popupWindow.setTouchable(true);
+                popupWindow.setOutsideTouchable(true);
+                popupWindow.setFocusable(true);
                 popupWindow.showAtLocation(view, Gravity.CENTER, 0, 0);
 
-                popupView.setOnTouchListener(new View.OnTouchListener() {
-                    @Override
-                    public boolean onTouch(View v, MotionEvent event) {
-                        popupWindow.dismiss();
-                        return true;
-                    }
-                });
 
                 saveBtn.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -138,10 +130,12 @@ public class CategorySettingsFragment extends Fragment {
             public void onClick(View view) {
                 final View popupView = inflater.inflate(R.layout.fragment_category_dialog, null);
                 int width = LinearLayout.LayoutParams.MATCH_PARENT;
-                int height = LinearLayout.LayoutParams.MATCH_PARENT;
+                int height = LinearLayout.LayoutParams.WRAP_CONTENT;
 
                 final PopupWindow popupWindow = new PopupWindow(popupView, width, height, true);
-
+                popupWindow.setTouchable(true);
+                popupWindow.setOutsideTouchable(true);
+                popupWindow.setFocusable(true);
                 popupWindow.showAtLocation(view, Gravity.CENTER, 0, 0);
 
                 final EditText categoryAddEditText = popupView.findViewById(R.id.categoryAddTextEdit);
@@ -168,15 +162,6 @@ public class CategorySettingsFragment extends Fragment {
                         popupWindow.dismiss();
                     }
                 });
-
-                popupView.setOnTouchListener(new View.OnTouchListener() {
-                    @Override
-                    public boolean onTouch(View v, MotionEvent event) {
-                        popupWindow.dismiss();
-                        return true;
-                    }
-                });
-
 
             }
         });

@@ -1,11 +1,14 @@
 package com.kamilamalikova.help.ui.terminal.adapter;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.Movie;
+import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,21 +18,39 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.EatingPlace;
+import com.kamilamalikova.help.model.LoggedInUser;
+import com.kamilamalikova.help.model.Order;
+import com.kamilamalikova.help.model.OrderStatus;
+import com.kamilamalikova.help.model.URLs;
+import com.kamilamalikova.help.request.RequestPackage;
+import com.kamilamalikova.help.request.RequestType;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
+import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.entity.ByteArrayEntity;
+import cz.msebera.android.httpclient.message.BasicHeader;
+import cz.msebera.android.httpclient.protocol.HTTP;
+
 public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
+    Activity activity;
+
     List<EatingPlace> eatingPlaceList;
+    LoggedInUser user;
 
     Context context;
 
@@ -54,9 +75,11 @@ public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         }
     }
 
-    public TableAdapter(Context context){
+    public TableAdapter(Context context, Activity activity){
         this.eatingPlaceList = new ArrayList<>();
         this.context = context;
+        this.activity = activity;
+        user = LoggedInUser.isLoggedIn(context, activity);
     }
 
     public List<EatingPlace> getEatingPlaceList() {
@@ -95,13 +118,15 @@ public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             case ITEM:
                 ViewHolder viewHolder = (ViewHolder) holder;
                 viewHolder.username.setText(eatingPlace.getWaiterUsername());
-                if (eatingPlace.getWaiterUsername().equals("free")) {
+                if (eatingPlace.getWaiterUsername().equals("null")) {
                     viewHolder.name.setText("Свободно");
-                    viewHolder.cardView.setBackgroundResource(R.color.free);
+                    viewHolder.cardView.setBackgroundResource(R.color.main_color);
                 }
                 else {
                     viewHolder.name.setText(eatingPlace.getWaiterName());
+                    viewHolder.cardView.setBackgroundResource(R.color.orange);
                 }
+                viewHolder.eatingPlace = eatingPlace;
                 viewHolder.table.setText((eatingPlace.getId()+""));
                 break;
             case LOADING:
@@ -173,7 +198,8 @@ public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         TextView table;
         TextView name;
         CardView cardView;
-
+        EatingPlace eatingPlace;
+        Order order;
         AlertDialog.Builder builder;
 
         public ViewHolder(@NonNull final View itemView) {
@@ -186,28 +212,30 @@ public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    builder = new AlertDialog.Builder(itemView.getContext());
+                    if (!eatingPlace.isReserved()){
+                        builder = new AlertDialog.Builder(itemView.getContext());
 
-                    builder.setMessage(R.string.start_new_order);
+                        builder.setMessage(R.string.start_new_order)
+                                .setCancelable(true)
+                                .setPositiveButton("Да", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        reserveTable(URLs.POST_TABLE.getName(), eatingPlace, itemView);
+                                    }
+                                })
+                                .setNegativeButton("Нет", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        dialog.cancel();
 
-                    builder.setMessage(R.string.start_new_order)
-                            .setCancelable(false)
-                            .setPositiveButton("Да", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    Toast.makeText(itemView.getContext(),"New dialog", Toast.LENGTH_LONG)
-                                            .show();
-                                }
-                            })
-                            .setNegativeButton("Нет", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    dialog.cancel();
-
-                                }
-                            });
-                    AlertDialog alertDialog = builder.create();
-                    alertDialog.show();
+                                    }
+                                });
+                        AlertDialog alertDialog = builder.create();
+                        alertDialog.show();
+                    }
+                    else {
+                        requestOrder(URLs.GET_ORDERS.getName()+"/0", eatingPlace, itemView);
+                    }
                 }
             });
         }
@@ -222,4 +250,110 @@ public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         }
     }
 
+
+    private void reserveTable(String url, EatingPlace eatingPlace, final View view){
+        final RequestPackage requestPackage = new RequestPackage();
+        requestPackage.setMethod(RequestType.POST);
+        requestPackage.setUrl(url+"/"+eatingPlace.getId());
+
+        LoggedInUser loggedInUser = user;
+        assert loggedInUser != null;
+        eatingPlace.setWaiterUsername(loggedInUser.getUsername());
+        requestPackage.setParam("reserved", "1");
+        requestPackage.setParam("username", loggedInUser.getUsername());
+
+        ByteArrayEntity entity = null;
+        try {
+            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+
+        Log.i("SER", requestPackage.getFullUrl() + entity);
+        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
+
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.addHeader(context.getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        client.post(context, requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                try {
+                    JSONObject response = new JSONObject(new String(responseBody));
+                    Log.i("response", response.toString());
+                    navigate(view,  new EatingPlace(response));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                Log.i("Status", statusCode+"! "+new String(responseBody));
+            }
+        });
+
+    }
+
+
+    private void requestOrder(String url, final EatingPlace eatingPlace, final View view){
+        final RequestPackage requestPackage = new RequestPackage();
+        requestPackage.setMethod(RequestType.GET);
+        requestPackage.setUrl(url);
+        requestPackage.setParam("tableId", eatingPlace.getId()+"");
+        requestPackage.setParam("status", OrderStatus.CREATED.name());
+        LoggedInUser loggedInUser = user;
+        assert loggedInUser != null;
+
+        ByteArrayEntity entity = null;
+        try {
+            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+
+        Log.i("SER", requestPackage.getFullUrl() + entity);
+        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
+
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.addHeader(context.getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        client.get(context, requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                try {
+                    JSONObject responseObject = new JSONObject(new String(responseBody));
+                    Log.i("response", responseObject.toString());
+                    JSONArray responseArray = responseObject.getJSONArray("content");
+
+                    if (responseArray.length() == 0){
+                        navigate(view, eatingPlace);
+                    }
+                    else {
+                        Order order = new Order(responseArray.getJSONObject(0));
+                        navigate(view, eatingPlace, order);
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                Log.i("Status", statusCode+"! "+new String(responseBody));
+            }
+        });
+
+    }
+
+    private void navigate(View itemView, EatingPlace eatingPlace){
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("table", eatingPlace);
+        Navigation.findNavController(itemView).navigate(R.id.nav_menu, bundle);
+    }
+
+    private void navigate(View itemView, EatingPlace eatingPlace, Order order){
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("table", eatingPlace);
+        bundle.putParcelable("order", order);
+        Navigation.findNavController(itemView).navigate(R.id.nav_order, bundle);
+    }
 }

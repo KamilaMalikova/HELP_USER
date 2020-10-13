@@ -31,6 +31,8 @@ public class Product implements Parcelable {
 
     protected double cost;
 
+    protected double buyQty = 0.0;
+
     public Product(long id, String productName, double inStockQty, boolean activeStatus, boolean restaurant, Unit unit, Category category, double cost) {
         this.id = id;
         this.productName = productName;
@@ -49,6 +51,7 @@ public class Product implements Parcelable {
         activeStatus = in.readByte() != 0;
         restaurant = in.readByte() != 0;
         cost = in.readDouble();
+        buyQty = in.readDouble();
     }
 
      public Product(JSONObject object) throws JSONException {
@@ -59,6 +62,7 @@ public class Product implements Parcelable {
         this.restaurant = object.getBoolean("restaurant");
         this.unit = new Unit((JSONObject)object.get("unit"));
         this.category = new Category((JSONObject)object.get("category"));
+        this.cost = object.getDouble("cost");
     }
 
     public static final Creator<Product> CREATOR = new Creator<Product>() {
@@ -145,6 +149,14 @@ public class Product implements Parcelable {
         this.cost = cost;
     }
 
+    public double getBuyQty() {
+        return buyQty;
+    }
+
+    public void setBuyQty(double buyQty) {
+        this.buyQty = buyQty;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -159,6 +171,7 @@ public class Product implements Parcelable {
         dest.writeValue(this.createdAt);
         dest.writeValue(this.category);
         dest.writeValue(this.unit);
+        dest.writeDouble(this.buyQty);
 
     }
 }

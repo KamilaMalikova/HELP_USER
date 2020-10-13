@@ -44,6 +44,8 @@ public class TerminalFragment extends Fragment {
     TableAdapter adapter;
     GridLayoutManager gridLayoutManager;
 
+    SwipeRefreshLayout swipeRefreshLayout;
+
     private static final int PAGE_START = 0;
     private boolean isLoading = false;
     private boolean isLastPage = false;
@@ -64,16 +66,16 @@ public class TerminalFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
+
         View view = inflater.inflate(R.layout.fragment_terminal, container, false);
 
         tablesList = view.findViewById(R.id.dataList);
         progressBar = view.findViewById(R.id.tablesProgressBar);
 
-        final SwipeRefreshLayout swipeRefreshLayout = view.findViewById(R.id.terminalSwipeRefresh);
+        swipeRefreshLayout = view.findViewById(R.id.terminalSwipeRefresh);
 
         gridLayoutManager = new GridLayoutManager(getContext(), 2, GridLayoutManager.VERTICAL, false);
-        adapter = new TableAdapter(getContext());
+        adapter = new TableAdapter(getContext(), getActivity());
 
         tablesList.addOnScrollListener(new PaginationScrollListener(gridLayoutManager) {
             @Override
@@ -173,4 +175,5 @@ public class TerminalFragment extends Fragment {
             }
         });
     }
+
 }

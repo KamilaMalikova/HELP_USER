@@ -120,9 +120,6 @@ public class InOutStockFragment extends Fragment {
 
             popupWindow.showAtLocation(view, Gravity.CENTER, 0, 0);
 
-
-
-
             startDateDisplay = popupView.findViewById(R.id.dateStartFilterTextView);
             startDateDisplay.setInputType(InputType.TYPE_NULL);
 

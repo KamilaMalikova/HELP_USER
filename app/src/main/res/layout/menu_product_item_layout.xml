@@ -1,75 +1,109 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal">
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
     <TextView
-        android:id="@+id/menuItemIDTextView"
-        android:layout_width="wrap_content"
+        android:id="@+id/menuItemId"
+        android:layout_width="1dp"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="10dp"
-        android:layout_marginTop="16dp"
-        android:layout_weight="1"
+        android:layout_alignParentTop="true"
+        android:layout_marginHorizontal="5dp"
+        android:layout_marginTop="15dp"
+        android:layout_alignParentStart="true"
         android:text="1"
-        android:textSize="20sp"
-        android:visibility="visible" />
+        android:textSize="24sp"
+        android:visibility="invisible" />
 
-    <LinearLayout
-        android:id="@+id/linearLayout2"
+    <TextView
+        android:id="@+id/menuItemNameTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
         android:layout_marginHorizontal="10dp"
-        android:layout_weight="1"
-        android:orientation="vertical">
-
-        <TextView
-            android:id="@+id/menuItemNameTextView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="TextView"
-            android:textSize="20dp" />
-
-        <TextView
-            android:id="@+id/textView4"
+        android:layout_marginTop="15dp"
+        android:layout_toEndOf="@+id/menuItemId"
+        android:text="@string/menu_products"
+        android:textSize="25sp" />
+    </RelativeLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginHorizontal="20dp">
+        <LinearLayout
+            android:id="@+id/linearLayout2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="TextView" />
+            android:layout_marginHorizontal="30dp"
+            android:layout_marginEnd="10dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/menuItemCostTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="5dp"
+                android:text="@string/cost"
+                android:textSize="16sp" />
+            <TextView
+                android:id="@+id/menuItemQtyTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="5dp"
+                android:text="@string/qty"
+                android:textSize="16sp" />
+
+        </LinearLayout>
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginVertical="5dp"
+            android:paddingStart="60dp">
+
+            <ImageButton
+                android:id="@+id/minusFromMenuBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:background="@drawable/border"
+                android:contentDescription="@string/choose_product"
+                app:srcCompat="@drawable/ic_baseline_remove_24" />
+
+            <EditText
+                android:id="@+id/menuItemSelectedQtyTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toStartOf="@+id/addFromMenuBtn"
+                android:layout_toEndOf="@+id/minusFromMenuBtn"
+                android:autofillHints=""
+                android:ems="5"
+                android:inputType="numberDecimal"
+                android:textAlignment="center"
+                android:textSize="20sp" />
+
+            <ImageButton
+                android:id="@+id/addFromMenuBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:background="@drawable/border"
+                android:contentDescription="@string/choose_product"
+                app:srcCompat="@drawable/ic_baseline_add_24"/>
+
+        </RelativeLayout>
+
 
     </LinearLayout>
 
-    <Button
-        android:id="@+id/lessBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="30dp"
-        android:layout_marginHorizontal="10dp"
-        android:layout_weight="1"
-        android:background="@drawable/button_border"
-        android:foreground="@drawable/ic_baseline_arrow_back_ios_24"
-        android:foregroundGravity="center_vertical|center_horizontal" />
 
-    <EditText
-        android:id="@+id/textView5"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:inputType="numberDecimal"
-        android:text="0.00"
-        app:layout_constraintStart_toEndOf="@+id/lessBtn"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/moreBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="30dp"
-        android:layout_weight="1"
-        android:background="@drawable/button_border"
-        android:foreground="@drawable/ic_baseline_arrow_forward_ios_24"
-        android:foregroundGravity="center_vertical|center_horizontal" />
 
 </LinearLayout>

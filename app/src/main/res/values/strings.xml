@@ -90,6 +90,15 @@
     <string name="start_new_order">Начать новый заказ?</string>
     <string name="order_number">Заказ №</string>
     <string name="order">Заказать</string>
+    <string name="qty">"Количество: "</string>
+    <string name="menu">Меню</string>
+    <string name="approve_order">Подтвердить заказ</string>
+    <string name="this_order">Заказ</string>
+    <string name="finish_order">Завершить заказ</string>
+    <string name="cancel_order">Завершить заказ?</string>
+    <string name="tables">Столы</string>
+    <string name="insert_required_number_of_tables_to_delete_or_insert">Введите необходимое число столов для добавления или удаления</string>
+    <string name="move_to_terminal">Заказ завершен. Возьмите чек! Перейти к основному меню?</string>
 
 
     <string-array name="categoriesSpinner">

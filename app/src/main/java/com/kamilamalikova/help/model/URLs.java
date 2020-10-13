@@ -11,7 +11,16 @@ public enum  URLs {
     POST_DOC("/documents"),
     POST_INVENTORY("/inventory"),
     GET_DOCS("/documents"),
-    GET_TABLES("/tables");
+    GET_TABLES("/tables"),
+    GET_MENU_ORDER("/menu/order"),
+    POST_TABLE("/tables/table"),
+    GET_ORDER("/orders/order"),
+    POST_ORDER("/orders/order"),
+    GET_ORDERS("/orders"),
+    POST_ORDERS("/orders"),
+    POST_ORDER_DETAIL("/order-details"),
+    POST_TABLES("/tables"),
+    POST_TABLES_DELETE("/tables/delete");
 
     String name;
 

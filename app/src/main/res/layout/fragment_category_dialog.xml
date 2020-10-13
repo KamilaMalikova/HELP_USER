@@ -7,10 +7,12 @@
     android:orientation="vertical"
     tools:context=".ui.settings.dialog.CategoryDialogFragment">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="336dp"
-        android:layout_height="225dp"
-        android:background="@color/dialog"
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_marginHorizontal="20dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/button_border"
+        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
@@ -19,9 +21,10 @@
 
         <EditText
             android:id="@+id/categoryAddTextEdit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="44dp"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginVertical="50dp"
+            android:layout_marginHorizontal="20dp"
             android:layout_weight="1"
             android:autofillHints=""
             android:backgroundTint="#009688"
@@ -29,49 +32,40 @@
             android:hint="@string/category"
             android:inputType="textPersonName"
             android:textColor="#009688"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.422"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:textAlignment="center" />
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="0dp"
+        <RelativeLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="68dp"
+            android:layout_marginVertical="40dp"
             android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/categoryAddTextEdit">
+            android:paddingHorizontal="10dp">
 
             <Button
                 android:id="@+id/saveDeleteBtn"
-                style="@style/Widget.AppCompat.Button.ButtonBar.AlertDialog"
+                android:text="@string/cancel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="30dp"
-                android:layout_marginBottom="16dp"
-                android:text="@string/cancel"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/saveSettingBtn"
-                app:layout_constraintHorizontal_bias="0.0"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintVertical_bias="0.0" />
+                android:layout_alignParentStart="true"
+                android:layout_marginHorizontal="15dp"
+                android:background="@color/main_color"
+                android:paddingHorizontal="20dp"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
 
             <Button
                 android:id="@+id/saveSettingBtn"
-                style="@style/Widget.AppCompat.Button.ButtonBar.AlertDialog"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="30dp"
-                android:text="@string/add"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintVertical_bias="0.0" />
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                android:layout_alignParentEnd="true"
+                android:layout_marginHorizontal="15dp"
+                android:background="@color/main_color"
+                android:paddingHorizontal="20dp"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:text="@string/add" />
+        </RelativeLayout>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.terminal.fragments.MenuFragment"
+    >
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:orientation="vertical">
-
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/orderNumTextView"
         android:layout_width="match_parent"
 
         android:layout_height="wrap_content"
@@ -24,13 +27,18 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+</LinearLayout>
 
     <Button
         android:id="@+id/orderBtn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/button_border"
-        android:text="@string/order" />
+        android:layout_gravity="bottom|end"
+        android:background="@color/main_color"
+        android:text="@string/order"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        android:textStyle="bold" />
 
 
-</LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

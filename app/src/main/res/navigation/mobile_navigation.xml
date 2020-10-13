@@ -82,4 +82,31 @@
         android:name="com.kamilamalikova.help.ui.stock.fragment.DocumentFragment"
         android:label="@string/document"
         tools:layout="@layout/fragment_document" />
+
+    <fragment
+        android:id="@+id/nav_menu"
+        android:name="com.kamilamalikova.help.ui.terminal.fragments.MenuFragment"
+        android:label="@string/menu"
+        tools:layout="@layout/fragment_menu" />
+
+    <fragment
+        android:id="@+id/nav_approve_order"
+        android:name="com.kamilamalikova.help.ui.terminal.fragments.ApproveOrderFragment"
+        android:label="@string/order"
+        tools:layout="@layout/fragment_approve_order" />
+
+    <fragment
+        android:id="@+id/nav_order"
+        android:name="com.kamilamalikova.help.ui.terminal.fragments.OrderFragment"
+        android:label="@string/this_order"
+        tools:layout="@layout/fragment_order_fragment" />
+
+
+    <fragment
+        android:id="@+id/nav_tables_settings"
+        android:name="com.kamilamalikova.help.ui.settings.tabfragments.TablesSettingsFragment"
+        android:label="@string/tables"
+        tools:layout="@layout/fragment_tables_settings" />
+
+
 </navigation>

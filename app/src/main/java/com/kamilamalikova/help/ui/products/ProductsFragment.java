@@ -3,6 +3,8 @@ package com.kamilamalikova.help.ui.products;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -149,9 +151,11 @@ public class ProductsFragment extends Fragment {
         if (item.getItemId() == R.id.filter){
             popupView = layoutInflater.inflate(R.layout.fragment_products_filter, null);
             int width = LinearLayout.LayoutParams.MATCH_PARENT;
-            int height = LinearLayout.LayoutParams.MATCH_PARENT;
-
+            int height = LinearLayout.LayoutParams.WRAP_CONTENT;
             popupWindow = new PopupWindow(popupView, width, height, true);
+            popupWindow.setTouchable(true);
+            popupWindow.setOutsideTouchable(true);
+            popupWindow.setFocusable(true);
             popupWindow.showAtLocation(thisView, Gravity.CENTER, 0, 0);
 
             categorySpinner = popupView.findViewById(R.id.filterCategorySpinner);
@@ -172,14 +176,6 @@ public class ProductsFragment extends Fragment {
 
                     requestData(URLs.GET_PRODUCTS.getName(), productName, category, active, restaurant);
                     popupWindow.dismiss();
-                }
-            });
-
-            popupView.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                    popupWindow.dismiss();
-                    return true;
                 }
             });
         }

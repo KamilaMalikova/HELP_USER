@@ -31,7 +31,6 @@ public class ProductItemAdapter extends BaseAdapter {
         this.qty = qty;
         this.unit = unit;
         this.mInflater = (LayoutInflater)c.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        this.layoutRes = layoutRes;
     }
 
     public ProductItemAdapter(Context c, JSONArray jsonArrayResponse, @LayoutRes int layoutRes) throws JSONException {

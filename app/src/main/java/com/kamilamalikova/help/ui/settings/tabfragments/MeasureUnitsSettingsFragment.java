@@ -100,19 +100,14 @@ public class MeasureUnitsSettingsFragment extends Fragment {
 
 
                 int width = LinearLayout.LayoutParams.MATCH_PARENT;
-                int height = LinearLayout.LayoutParams.MATCH_PARENT;
+                int height = LinearLayout.LayoutParams.WRAP_CONTENT;
 
                 final PopupWindow popupWindow = new PopupWindow(popupView, width, height, true);
-
+                popupWindow.setTouchable(true);
+                popupWindow.setOutsideTouchable(true);
+                popupWindow.setFocusable(true);
                 popupWindow.showAtLocation(view, Gravity.CENTER, 0, 0);
 
-                popupView.setOnTouchListener(new View.OnTouchListener() {
-                    @Override
-                    public boolean onTouch(View v, MotionEvent event) {
-                        popupWindow.dismiss();
-                        return true;
-                    }
-                });
 
                 saveBtn.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -140,10 +135,12 @@ public class MeasureUnitsSettingsFragment extends Fragment {
             public void onClick(View view) {
                 final View popupView = inflater1.inflate(R.layout.fragment_measure_unit_dialog, null);
                 int width = LinearLayout.LayoutParams.MATCH_PARENT;
-                int height = LinearLayout.LayoutParams.MATCH_PARENT;
+                int height = LinearLayout.LayoutParams.WRAP_CONTENT;
 
                 final PopupWindow popupWindow = new PopupWindow(popupView, width, height, true);
-
+                popupWindow.setTouchable(true);
+                popupWindow.setOutsideTouchable(true);
+                popupWindow.setFocusable(true);
                 popupWindow.showAtLocation(view, Gravity.CENTER, 0, 0);
 
                 final EditText unitAdd = popupView.findViewById(R.id.unitAddTextEdit);
@@ -169,14 +166,6 @@ public class MeasureUnitsSettingsFragment extends Fragment {
                     @Override
                     public void onClick(View v) {
                         popupWindow.dismiss();
-                    }
-                });
-
-                popupView.setOnTouchListener(new View.OnTouchListener() {
-                    @Override
-                    public boolean onTouch(View v, MotionEvent event) {
-                        popupWindow.dismiss();
-                        return true;
                     }
                 });
             }

@@ -4,6 +4,8 @@ import android.os.Build;
 
 import androidx.annotation.RequiresApi;
 
+import com.kamilamalikova.help.model.Order;
+import com.kamilamalikova.help.model.Product;
 import com.kamilamalikova.help.model.StockDocument;
 import com.kamilamalikova.help.model.StockItemBalance;
 import com.kamilamalikova.help.ui.stock.adapter.ProductItemObject;
@@ -124,6 +126,23 @@ public class RequestPackage {
                 "    \"productName\": \""+itemObject.getProductName()+"\",\n" +
                 "    \"amount\": "+itemObject.getQty()+"\n" +
                 "  }";
+        return new JSONObject(json);
+    }
+
+    public JSONArray getOrderDetailJSONArray(Order order, List<Product> products) throws JSONException {
+        JSONArray jsonArray = new JSONArray();
+        for (Product product: products) {
+            jsonArray.put(getOrderDetailJSONObject(order, product));
+        }
+        return jsonArray;
+    }
+
+    private JSONObject getOrderDetailJSONObject(Order order, Product product) throws JSONException {
+        String json = "{\n" +
+                "        \"orderId\":"+order.getOrderId()+",\n" +
+                "        \"productId\":"+product.getId()+",\n" +
+                "        \"qty\":"+product.getBuyQty()+"\n" +
+                "    }";
         return new JSONObject(json);
     }
 

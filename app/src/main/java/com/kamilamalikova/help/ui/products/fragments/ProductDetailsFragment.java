@@ -94,6 +94,7 @@ public class ProductDetailsFragment extends Fragment {
         restaurantSwitch = view.findViewById(R.id.detailRestaurantSwitchCompat);
         costEditText = view.findViewById(R.id.detailCostTextNumberDecimal);
         qtyEditText = view.findViewById(R.id.detailQuantityTextNumberDecimal);
+        enable(false);
         try {
             requestData(URLs.GET_PRODUCT.getName()+"/"+this.id);
         } catch (InterruptedException e) {
@@ -118,7 +119,7 @@ public class ProductDetailsFragment extends Fragment {
             item.setVisible(false);
             enable(true);
             editDone.setVisible(true);
-        }else if (item.getItemId() == R.id.edit_done_menu){
+        } else if (item.getItemId() == R.id.edit_done_menu){
             item.setVisible(false);
             ItemObject categoryItemObject = ((ItemObject)((ItemAdapter)categorySpinner.getAdapter()).getItem(categorySpinner.getSelectedItemPosition()));
             Product product = new Product(
@@ -132,12 +133,10 @@ public class ProductDetailsFragment extends Fragment {
 
                     new Category(Integer.parseInt(((ItemObject)((ItemAdapter)categorySpinner.getAdapter()).getItem(categorySpinner.getSelectedItemPosition())).getId()),
                             ((ItemObject)((ItemAdapter)categorySpinner.getAdapter()).getItem(categorySpinner.getSelectedItemPosition())).getValue()),
-
                     Double.parseDouble(costEditText.getText().toString())
             );
             saveData(product);
-            enable(false);
-            edit.setVisible(true);
+
         }
         else {
             getActivity().onBackPressed();
@@ -152,6 +151,8 @@ public class ProductDetailsFragment extends Fragment {
         qtyEditText.setEnabled(enabled);
         activeSwitch.setEnabled(enabled);
         restaurantSwitch.setEnabled(enabled);
+        unitSpinner.setEnabled(enabled);
+        categorySpinner.setEnabled(enabled);
     }
 
     private void saveData(Product product){
@@ -165,6 +166,7 @@ public class ProductDetailsFragment extends Fragment {
         requestPackage.setParam("unit", Integer.toString(product.getUnit().getId()));
         requestPackage.setParam("category", Integer.toString(product.getCategory().getId()));
         requestPackage.setParam("active", product.isActiveStatus() ? "1": "0");
+        requestPackage.setParam("cost", Double.toString(product.getCost()));
 
         ByteArrayEntity entity = null;
         try {
@@ -178,9 +180,10 @@ public class ProductDetailsFragment extends Fragment {
         Log.i("SER", requestPackage.getFullUrl() + entity);
         Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
 
-        LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
-
-        if (loggedInUser == null){
+        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
+        try {
+            assert loggedInUser != null;
+        }catch (AssertionError error){
             startIntentLogIn();
             return;
         }
@@ -195,6 +198,8 @@ public class ProductDetailsFragment extends Fragment {
                 try {
                     JSONObject responseObject = new JSONObject(new String(responseBody));
                     Log.i("Response", responseObject.toString());
+                    enable(false);
+                    edit.setVisible(true);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
