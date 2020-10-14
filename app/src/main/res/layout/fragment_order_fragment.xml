@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -8,6 +8,8 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_above="@+id/openMenuBtn"
+        android:layout_marginBottom="0dp"
         android:orientation="vertical">
 
         <TextView
@@ -18,6 +20,15 @@
             android:textAlignment="center"
             android:textColor="#11201F"
             android:textSize="24sp" />
+
+        <TextView
+            android:id="@+id/sumNumberTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAlignment="textEnd"
+            android:textSize="18sp"
+            android:visibility="invisible"
+            android:text="@string/sum" />
 
         <ListView
             android:id="@+id/orderProductListView"
@@ -30,11 +41,13 @@
         android:id="@+id/openMenuBtn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="0dp"
         android:background="@color/main_color"
         android:text="@string/menu"
-        android:layout_gravity="bottom|end"
         android:textColor="#FFFFFF"
         android:textSize="24sp"
-        android:textStyle="bold"/>
+        android:textStyle="bold" />
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</RelativeLayout>

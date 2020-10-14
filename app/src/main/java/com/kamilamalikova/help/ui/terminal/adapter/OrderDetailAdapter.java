@@ -98,9 +98,6 @@ public class OrderDetailAdapter extends BaseAdapter {
                 if (qty < 0.0){
                     return;
                 }
-                if (qty == 0.0){
-                    productList.remove(product);
-                }
             }
         });
 

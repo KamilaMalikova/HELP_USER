@@ -1,29 +1,22 @@
 package com.kamilamalikova.help.ui.terminal.adapter;
 
 import android.content.Context;
-import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
-import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.kamilamalikova.help.R;
-import com.kamilamalikova.help.model.Category;
 import com.kamilamalikova.help.model.Product;
 import com.kamilamalikova.help.ui.terminal.fragments.MenuFragment;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.threeten.bp.LocalDateTime;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,8 +27,10 @@ public class MenuAdapter extends BaseExpandableListAdapter {
     Context context;
     LayoutInflater mInflater;
     List<String> categories;
+    List<String> categoriesOriginal;
     MenuFragment menuFragment;
     HashMap<String, List<Product>> productListHashMap;
+    HashMap<String, List<Product>> productListHashMapOriginal;
 
     public MenuAdapter(Context context, JSONObject products, MenuFragment menuFragment) throws JSONException {
         this.context = context;
@@ -43,16 +38,22 @@ public class MenuAdapter extends BaseExpandableListAdapter {
         this.mInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         this.productListHashMap = new HashMap<>();
         this.categories = new ArrayList<>();
+        this.productListHashMapOriginal = new HashMap<>();
+        this.categoriesOriginal = new ArrayList<>();
 
         for (Iterator<String> it = products.keys(); it.hasNext(); ) {
             String key = it.next();
             categories.add(key);
+            categoriesOriginal.add(key);
             List<Product> products1 = new ArrayList<>();
+            List<Product> products2 = new ArrayList<>();
             JSONArray array = products.getJSONArray(key);
             for (int j = 0; j < array.length(); j++) {
                 products1.add(new Product(array.getJSONObject(j)));
+                products2.add(new Product(array.getJSONObject(j)));
             }
             this.productListHashMap.put(key, products1);
+            this.productListHashMapOriginal.put(key, products2);
         }
         
     }
@@ -155,16 +156,13 @@ public class MenuAdapter extends BaseExpandableListAdapter {
             public void onClick(View v) {
                 Double qty = (menuItemSelectedQtyEditText.getText().toString().isEmpty()) ? 0.0 : Double.parseDouble(menuItemSelectedQtyEditText.getText().toString());
                 qty-=1.0;
+                if (qty < 0.0) {
+                  return;
+                }
                 product.setBuyQty(qty);
                 menuItemSelectedQtyEditText.setText((product.getBuyQty()+""));
                 menuItemQtyTextView.setText(("Кол-во: "+" "+ (product.getInStockQty() - product.getBuyQty()) +""));
-                if (qty < 0.0){
-//                    Toast.makeText(finalConvertView.getContext(), "Превышен лимит", Toast.LENGTH_LONG)
-//                            .show();
-                    return;
-                }
                 if (qty == 0.0){
-                    menuFragment.orderedProducts.remove(product);
                     menuFragment.orderBtn.setText((context.getText(R.string.order)+" ("+menuFragment.orderedProducts.size()+")"));
                 }else {
                     menuFragment.orderedProducts.add(product);
@@ -180,5 +178,30 @@ public class MenuAdapter extends BaseExpandableListAdapter {
     @Override
     public boolean isChildSelectable(int groupPosition, int childPosition) {
         return true;
+    }
+
+    public void filter(String query){
+        query = query.toLowerCase();
+        categories.clear();
+        productListHashMap.clear();
+        if (query.isEmpty()){
+            categories.addAll(categoriesOriginal);
+            productListHashMap.putAll(productListHashMapOriginal);
+        }else {
+            for (String category: categoriesOriginal) {
+                List<Product> productList = productListHashMapOriginal.get(category);
+                List<Product> newProductList = new ArrayList<>();
+                for (Product product: productList) {
+                    if (product.getProductName().toLowerCase().contains(query) || product.getCategory().getCategory().toLowerCase().contains(query)){
+                        newProductList.add(product);
+                    }
+                }
+                if (newProductList.size() > 0){
+                    categories.add(category);
+                    productListHashMap.put(category, newProductList);
+                }
+            }
+        }
+        notifyDataSetChanged();
     }
 }

@@ -1,6 +1,7 @@
 package com.kamilamalikova.help.request;
 
 import android.os.Build;
+import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
@@ -141,8 +142,9 @@ public class RequestPackage {
         String json = "{\n" +
                 "        \"orderId\":"+order.getOrderId()+",\n" +
                 "        \"productId\":"+product.getId()+",\n" +
-                "        \"qty\":"+product.getBuyQty()+"\n" +
+                "        \"qty\":"+( product.getBuyQty())+"\n" +
                 "    }";
+        Log.i("Val", json);
         return new JSONObject(json);
     }
 

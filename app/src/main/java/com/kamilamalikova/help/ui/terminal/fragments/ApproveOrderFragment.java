@@ -32,6 +32,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.ByteArrayEntity;
@@ -80,9 +81,14 @@ public class ApproveOrderFragment extends Fragment {
         requestPackage.setMethod(RequestType.POST);
         requestPackage.setUrl(url);
 
+        List<Product> productsToSave = new ArrayList<>();
+        for (Product product: products) {
+            if (product.getBuyQty() > 0.0) productsToSave.add(product);
+        }
+
         ByteArrayEntity entity = null;
         try {
-            entity = new ByteArrayEntity(requestPackage.getOrderDetailJSONArray(order, products).toString().getBytes("UTF-8"));
+            entity = new ByteArrayEntity(requestPackage.getOrderDetailJSONArray(order, productsToSave).toString().getBytes("UTF-8"));
         } catch (UnsupportedEncodingException | JSONException e) {
             e.printStackTrace();
         }

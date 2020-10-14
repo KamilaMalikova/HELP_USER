@@ -22,6 +22,13 @@ public class OrderDetail implements Parcelable {
         this.cost = object.getDouble("cost");
     }
 
+    public OrderDetail(long id, Product product, double quantity, double cost) {
+        this.id = id;
+        this.product = product;
+        this.quantity = quantity;
+        this.cost = cost;
+    }
+
     protected OrderDetail(Parcel in) {
         id = in.readLong();
         product = in.readParcelable(Product.class.getClassLoader());

@@ -99,6 +99,7 @@
     <string name="tables">Столы</string>
     <string name="insert_required_number_of_tables_to_delete_or_insert">Введите необходимое число столов для добавления или удаления</string>
     <string name="move_to_terminal">Заказ завершен. Возьмите чек! Перейти к основному меню?</string>
+    <string name="sum">Итого</string>
 
 
     <string-array name="categoriesSpinner">

@@ -1,6 +1,8 @@
 package com.kamilamalikova.help.ui.terminal.fragments;
 
 import android.app.AlertDialog;
+import android.app.SearchManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 
@@ -20,6 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ExpandableListView;
+import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -59,6 +62,8 @@ public class MenuFragment extends Fragment {
     View view;
     ExpandableListView menuListView;
     SwipeRefreshLayout menuSwipeRefresh;
+    SearchView searchMenuView;
+    MenuAdapter adapter;
     public Button orderBtn;
     public Set<Product> orderedProducts = new LinkedHashSet<>();
     public MenuFragment thisFragment = this;
@@ -80,7 +85,9 @@ public class MenuFragment extends Fragment {
 
         view = inflater.inflate(R.layout.fragment_menu, container, false);
         menuListView = view.findViewById(R.id.menuListView);
+        menuListView.setAdapter(adapter);
         orderBtn = view.findViewById(R.id.orderBtn);
+        searchMenuView = view.findViewById(R.id.searchMenuView);
         TextView orderNumTextView = view.findViewById(R.id.orderNumTextView);
         if (order != null) orderNumTextView.setText((getString(R.string.this_order)+" № "+order.getOrderId()));
         else orderNumTextView.setText(getString(R.string.this_order));
@@ -110,6 +117,32 @@ public class MenuFragment extends Fragment {
             }
         });
 
+        SearchManager searchManager = (SearchManager) getContext().getSystemService(Context.SEARCH_SERVICE);
+        searchMenuView.setSearchableInfo(searchManager.getSearchableInfo(getActivity().getComponentName()));
+        searchMenuView.setIconifiedByDefault(false);
+        searchMenuView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                adapter.filter(query);
+                expandAll();
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                adapter.filter(newText);
+                expandAll();
+                return false;
+            }
+        });
+        searchMenuView.setOnCloseListener(new SearchView.OnCloseListener() {
+            @Override
+            public boolean onClose() {
+                adapter.filter("");
+                expandAll();
+                return false;
+            }
+        });
         requestData(URLs.GET_MENU_ORDER.getName());
         return view;
     }
@@ -149,6 +182,16 @@ public class MenuFragment extends Fragment {
         return super.onOptionsItemSelected(item);
     }
 
+    private void expandAll() {
+        if (menuListView != null){
+            int count = adapter.getGroupCount();
+            Log.i("count", count+"");
+            for (int i = 0; i < count; i++){
+                menuListView.expandGroup(i);
+            }
+        }
+    }
+
     public void requestData(final String url){
         final RequestPackage requestPackage = new RequestPackage();
         requestPackage.setMethod(RequestType.GET);
@@ -177,7 +220,7 @@ public class MenuFragment extends Fragment {
                 try {
                     JSONObject response = new JSONObject(new String(responseBody));
                     Log.i("response", response.toString());
-                    MenuAdapter adapter = new MenuAdapter(getContext(), response, thisFragment);
+                    adapter = new MenuAdapter(getContext(), response, thisFragment);
                     menuListView.setAdapter(adapter);
                     adapter.notifyDataSetChanged();
                 } catch (JSONException e) {

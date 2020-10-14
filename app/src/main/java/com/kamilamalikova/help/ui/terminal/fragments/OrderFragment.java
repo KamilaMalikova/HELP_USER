@@ -25,7 +25,9 @@ import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.EatingPlace;
 import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.model.Order;
+import com.kamilamalikova.help.model.OrderDetail;
 import com.kamilamalikova.help.model.OrderStatus;
+import com.kamilamalikova.help.model.Product;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
@@ -37,6 +39,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.ByteArrayEntity;
@@ -47,11 +53,14 @@ import cz.msebera.android.httpclient.protocol.HTTP;
 public class OrderFragment extends Fragment {
 
     Order order;
+    public Set<Product> newOrderDetails;
     TextView orderNumberTextView;
+    TextView sumTextView;
     ListView orderProductListView;
     View view;
+    OrderAdapter adapter;
 
-    Button openMenuBtn;
+    public Button openMenuBtn;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -68,8 +77,8 @@ public class OrderFragment extends Fragment {
         view = inflater.inflate(R.layout.fragment_order_fragment, container, false);
         orderNumberTextView = view.findViewById(R.id.orderNumberTextView);
         orderProductListView = view.findViewById(R.id.orderProductListView);
-
-        OrderAdapter adapter = new OrderAdapter(getContext(), order);
+        sumTextView = view.findViewById(R.id.sumNumberTextView);
+        adapter = new OrderAdapter(getContext(), order, this);
         orderProductListView.setAdapter(adapter);
 
         orderNumberTextView.setText((getString(R.string.this_order) +" № "+order.getOrderId()));
@@ -77,9 +86,13 @@ public class OrderFragment extends Fragment {
         openMenuBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Bundle bundle = new Bundle();
-                bundle.putParcelable("order", order);
-                Navigation.findNavController(view).navigate(R.id.nav_menu, bundle);
+                if (newOrderDetails != null && newOrderDetails.size() > 0){
+                    createOrderDetails(URLs.POST_ORDER_DETAIL.getName()+"/"+order.getOrderId(), newOrderDetails);
+                }else {
+                    Bundle bundle = new Bundle();
+                    bundle.putParcelable("order", order);
+                    Navigation.findNavController(view).navigate(R.id.nav_menu, bundle);
+                }
             }
         });
         return view;
@@ -158,6 +171,56 @@ public class OrderFragment extends Fragment {
                     AlertDialog alertDialog = builder.create();
                     alertDialog.show();
 
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                Log.i("Status", statusCode+"! "+new String(responseBody));
+            }
+        });
+    }
+
+
+    public void createOrderDetails(final String url, Set<Product> products){
+        final RequestPackage requestPackage = new RequestPackage();
+        requestPackage.setMethod(RequestType.POST);
+        requestPackage.setUrl(url);
+
+        List<Product> productsToSave = new ArrayList<>();
+        for (Product product: products) {
+            if (product.getBuyQty() != 0.0) productsToSave.add(product);
+        }
+
+        ByteArrayEntity entity = null;
+        try {
+            entity = new ByteArrayEntity(requestPackage.getOrderDetailJSONArray(order, productsToSave).toString().getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException | JSONException e) {
+            e.printStackTrace();
+        }
+        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+
+        Log.i("SER", requestPackage.getFullUrl() + entity);
+        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
+
+        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
+
+        AsyncHttpClient client = new AsyncHttpClient();
+        assert loggedInUser != null;
+        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+
+        client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                try {
+                    JSONObject response = new JSONObject(new String(responseBody));
+                    Log.i("response", response.toString());
+                    order = new Order(response);
+                    newOrderDetails = null;
+                    openMenuBtn.setText(getString(R.string.menu));
+                    adapter.setOrder(order);
+                    adapter.notifyDataSetChanged();
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
