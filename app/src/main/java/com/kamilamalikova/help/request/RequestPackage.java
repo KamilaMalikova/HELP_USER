@@ -1,10 +1,15 @@
 package com.kamilamalikova.help.request;
 
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.Context;
 import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
+import com.kamilamalikova.help.MainActivity;
+import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.model.Order;
 import com.kamilamalikova.help.model.Product;
 import com.kamilamalikova.help.model.StockDocument;
@@ -16,6 +21,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -25,7 +35,7 @@ import java.util.Map;
 public class RequestPackage {
     private final String prefix = "http://";
 
-    private final String server = "192.168.25.107";
+    private String server = "192.168.25.107";
 
     private final String port = "8080";
 
@@ -37,7 +47,20 @@ public class RequestPackage {
 
     private String authorizationToken = "";
 
+    public RequestPackage() {
+        try {
+            @SuppressLint("SdCardPath") File file = new File("/data/user/0/com.kamilamalikova.help/app_data/");
+            File serFile = new File(file.getAbsoluteFile()+"/ip.ser");
+            Log.i("File", serFile.getAbsolutePath());
+            FileInputStream streamIn = new FileInputStream(serFile);
+            ObjectInputStream objectInputStream = new ObjectInputStream(streamIn);
+            String server = (String)objectInputStream.readObject();
+            this.server = server;
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }
 
+    }
 
     public String getUrl() {
         return url;
@@ -123,8 +146,8 @@ public class RequestPackage {
                 "        null\n" +
                 "      ]\n" +
                 "    },\n" +
-                "    \"productId\": "+itemObject.getId()+",\n" +
-                "    \"productName\": \""+itemObject.getProductName()+"\",\n" +
+                "    \"productId\": "+itemObject.getProduct().getId()+",\n" +
+                "    \"productName\": \""+itemObject.getProduct().getName()+"\",\n" +
                 "    \"amount\": "+itemObject.getQty()+"\n" +
                 "  }";
         return new JSONObject(json);

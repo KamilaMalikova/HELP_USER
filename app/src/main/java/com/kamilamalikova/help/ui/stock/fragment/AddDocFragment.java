@@ -55,12 +55,11 @@ import cz.msebera.android.httpclient.protocol.HTTP;
 
 public class AddDocFragment extends Fragment {
 
-    volatile ListView stockProductListView;
-
-    volatile CheckBox isChosenCheckBox;
-    volatile TextView stockDocProductNameTextView;
-    volatile EditText stockDocQtyTextView;
-    volatile TextView stockDocIdTextView;
+    ListView stockProductListView;
+    CheckBox isChosenCheckBox;
+    TextView stockDocProductNameTextView;
+    EditText stockDocQtyTextView;
+    TextView stockDocIdTextView;
 
     volatile ArrayList<ProductItemObject> productList;
 
@@ -89,21 +88,6 @@ public class AddDocFragment extends Fragment {
 
         stockProductListView = view.findViewById(R.id.docInventoryListView);
         requestData(URLs.GET_ITEMS.getName(), null, "500", null);
-
-        stockProductListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                ProductItemAdapter itemAdapter = (ProductItemAdapter) stockProductListView.getAdapter();
-                View item_view = itemAdapter.getView(position, view, null);
-                Log.i("Item click", "Clicked");
-                isChosenCheckBox = item_view.findViewById(R.id.stockDocProductCheckBox);
-                stockDocProductNameTextView = item_view.findViewById(R.id.stockDocProductNameTextView);
-                stockDocQtyTextView = item_view.findViewById(R.id.stockDocQtyTextView);
-                stockDocIdTextView = item_view.findViewById(R.id.stockDocIdTextView);
-
-            }
-        });
-
 
         Button addProductToListBtn = view.findViewById(R.id.formDocBtn);
         addProductToListBtn.setOnClickListener(new View.OnClickListener() {

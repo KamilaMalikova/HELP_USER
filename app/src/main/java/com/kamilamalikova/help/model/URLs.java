@@ -20,7 +20,11 @@ public enum  URLs {
     POST_ORDERS("/orders"),
     POST_ORDER_DETAIL("/order-details"),
     POST_TABLES("/tables"),
-    POST_TABLES_DELETE("/tables/delete");
+    POST_TABLES_DELETE("/tables/delete"),
+    POST_USER("/users"),
+    GET_USERS("/users"),
+    GET_TIP("/tip"),
+    POST_TIP("/tip");
 
     String name;
 

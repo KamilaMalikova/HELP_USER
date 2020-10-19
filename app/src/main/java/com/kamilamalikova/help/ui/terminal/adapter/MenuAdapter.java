@@ -1,6 +1,9 @@
 package com.kamilamalikova.help.ui.terminal.adapter;
 
 import android.content.Context;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,6 +34,9 @@ public class MenuAdapter extends BaseExpandableListAdapter {
     MenuFragment menuFragment;
     HashMap<String, List<Product>> productListHashMap;
     HashMap<String, List<Product>> productListHashMapOriginal;
+
+
+
 
     public MenuAdapter(Context context, JSONObject products, MenuFragment menuFragment) throws JSONException {
         this.context = context;
@@ -109,13 +115,15 @@ public class MenuAdapter extends BaseExpandableListAdapter {
             convertView = mInflater.inflate(R.layout.menu_product_item_layout, null);
         }
 
+
         TextView menuItemId = convertView.findViewById(R.id.menuItemId);
         ImageButton addFromMenuBtn = convertView.findViewById(R.id.addFromMenuBtn);
-        TextView menuItemNameTextView = convertView.findViewById(R.id.menuItemNameTextView);
+        final TextView menuItemNameTextView = convertView.findViewById(R.id.menuItemNameTextView);
         final TextView menuItemQtyTextView = convertView.findViewById(R.id.menuItemQtyTextView);
-        TextView menuItemCostTextView = convertView.findViewById(R.id.menuItemCostTextView);
+        final TextView menuItemCostTextView = convertView.findViewById(R.id.menuItemCostTextView);
         final EditText menuItemSelectedQtyEditText = convertView.findViewById(R.id.menuItemSelectedQtyTextView);
-        menuItemSelectedQtyEditText.setText("0.0");
+
+        //menuItemSelectedQtyEditText.setText("0.0");
         final Product product = productListHashMap.get(categories.get(groupPosition)).get(childPosition);
 
         ImageButton minusFromMenuBtn = convertView.findViewById(R.id.minusFromMenuBtn);
@@ -125,28 +133,43 @@ public class MenuAdapter extends BaseExpandableListAdapter {
         menuItemQtyTextView.setText(("Кол-во: "+" "+(product.getInStockQty() - product.getBuyQty())+""));
         menuItemCostTextView.setText(("Цена: "+": "+product.getCost()));
 
-        final View finalConvertView = convertView;
+        menuItemSelectedQtyEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                Double qty = (s.toString().isEmpty()) ? 0.0 : Double.parseDouble(s.toString());
+                if (qty > product.getInStockQty()){
+                    Toast.makeText(context, "Превышен лимит", Toast.LENGTH_LONG)
+                            .show();
+                } else if (qty < 0.0){
+                    Toast.makeText(context, "Значение не может быть отрицательным", Toast.LENGTH_LONG)
+                            .show();
+                }else {
+                    product.setBuyQty(qty);
+                    menuItemQtyTextView.setText(("Кол-во: "+" "+ (product.getInStockQty() - product.getBuyQty()) +""));
+                    menuFragment.orderedProducts.add(product);
+                    menuFragment.orderBtn.setText((context.getText(R.string.order)+" ("+menuFragment.orderedProducts.size()+")"));
+                }
+            }
+        });
+
 
         addFromMenuBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Double qty = (menuItemSelectedQtyEditText.getText().toString().isEmpty()) ? 0.0 : Double.parseDouble(menuItemSelectedQtyEditText.getText().toString());
                 qty+=1.0;
-                if (qty > product.getInStockQty()){
-                    Toast.makeText(finalConvertView.getContext(), "Превышен лимит", Toast.LENGTH_LONG)
-                            .show();
-                    return;
-                }
-                product.setBuyQty(qty);
-                menuItemSelectedQtyEditText.setText((product.getBuyQty()+""));
-                menuItemQtyTextView.setText(("Кол-во: "+" "+ (product.getInStockQty() - product.getBuyQty()) +""));
-                menuFragment.orderedProducts.add(product);
-                menuFragment.orderBtn.setText((context.getText(R.string.order)+" ("+menuFragment.orderedProducts.size()+")"));
-//                final PopupWindow popupWindow = new PopupWindow(popupView, width, height, true);
-//                popupWindow.setTouchable(true);
-//                popupWindow.setOutsideTouchable(true);
-//                //popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-//                popupWindow.setFocusable(true);
+                menuItemSelectedQtyEditText.setText((qty+""));
+
             }
         });
 
@@ -156,19 +179,7 @@ public class MenuAdapter extends BaseExpandableListAdapter {
             public void onClick(View v) {
                 Double qty = (menuItemSelectedQtyEditText.getText().toString().isEmpty()) ? 0.0 : Double.parseDouble(menuItemSelectedQtyEditText.getText().toString());
                 qty-=1.0;
-                if (qty < 0.0) {
-                  return;
-                }
-                product.setBuyQty(qty);
-                menuItemSelectedQtyEditText.setText((product.getBuyQty()+""));
-                menuItemQtyTextView.setText(("Кол-во: "+" "+ (product.getInStockQty() - product.getBuyQty()) +""));
-                if (qty == 0.0){
-                    menuFragment.orderBtn.setText((context.getText(R.string.order)+" ("+menuFragment.orderedProducts.size()+")"));
-                }else {
-                    menuFragment.orderedProducts.add(product);
-                    menuFragment.orderBtn.setText((context.getText(R.string.order)+" ("+menuFragment.orderedProducts.size()+")"));
-                }
-
+                menuItemSelectedQtyEditText.setText((qty+""));
             }
         });
 

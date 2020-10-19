@@ -67,7 +67,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:layout_marginVertical="5dp"
-            android:paddingStart="60dp">
+            android:paddingStart="20dp">
 
             <ImageButton
                 android:id="@+id/minusFromMenuBtn"
@@ -82,13 +82,14 @@
                 android:id="@+id/menuItemSelectedQtyTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_toStartOf="@+id/addFromMenuBtn"
-                android:layout_toEndOf="@+id/minusFromMenuBtn"
-                android:autofillHints=""
-                android:ems="5"
-                android:inputType="numberDecimal"
                 android:textAlignment="center"
-                android:textSize="20sp" />
+                android:textSize="20sp"
+                android:layout_toEndOf="@+id/minusFromMenuBtn"
+                android:layout_toStartOf="@+id/addFromMenuBtn"
+                android:inputType="numberDecimal"
+                android:hint="0.0">
+
+            </EditText>
 
             <ImageButton
                 android:id="@+id/addFromMenuBtn"

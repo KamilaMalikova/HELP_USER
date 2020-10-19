@@ -310,7 +310,6 @@ public class ProductDetailsFragment extends Fragment {
                     Log.i("response", responseArray.toString());
                     ItemAdapter itemAdapter = new ItemAdapter(getContext(), responseArray, type, R.layout.spin_item);
                     spinner.setAdapter(itemAdapter);
-                    threads+=1;
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }

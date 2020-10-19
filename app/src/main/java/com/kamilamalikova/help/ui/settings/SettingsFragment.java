@@ -13,8 +13,10 @@ import com.google.android.material.tabs.TabLayout;
 import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.ui.settings.adapter.ViewPagerAdapter;
 import com.kamilamalikova.help.ui.settings.tabfragments.CategorySettingsFragment;
+import com.kamilamalikova.help.ui.settings.tabfragments.IpFragment;
 import com.kamilamalikova.help.ui.settings.tabfragments.MeasureUnitsSettingsFragment;
 import com.kamilamalikova.help.ui.settings.tabfragments.TablesSettingsFragment;
+import com.kamilamalikova.help.ui.settings.tabfragments.TipFragment;
 
 
 public class SettingsFragment extends Fragment {
@@ -45,6 +47,8 @@ public class SettingsFragment extends Fragment {
         adapter.addFrag(new CategorySettingsFragment(), getString(R.string.categories));
         adapter.addFrag(new MeasureUnitsSettingsFragment(), getString(R.string.measeureUnits));
         adapter.addFrag(new TablesSettingsFragment(), getString(R.string.tables));
+        adapter.addFrag(new TipFragment(), getString(R.string.just_tip));
+        adapter.addFrag(new IpFragment(), getString(R.string.ip));
         viewPager.setAdapter(adapter);
     }
 

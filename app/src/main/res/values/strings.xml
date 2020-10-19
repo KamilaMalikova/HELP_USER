@@ -22,7 +22,7 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="hello">Hello</string>
-    <string name="role">Role</string>
+    <string name="role">Роль</string>
     <string name="userimage">UserImage</string>
     <string name="general">Основное</string>
     <string name="extra">Дополнительно</string>
@@ -100,6 +100,13 @@
     <string name="insert_required_number_of_tables_to_delete_or_insert">Введите необходимое число столов для добавления или удаления</string>
     <string name="move_to_terminal">Заказ завершен. Возьмите чек! Перейти к основному меню?</string>
     <string name="sum">Итого</string>
+    <string name="name">Имя</string>
+    <string name="lastname">Фамилия</string>
+    <string name="repeat_password">Повторите пароль</string>
+    <string name="ip">IP адрес</string>
+    <string name="saved">Сохранено</string>
+    <string name="tip">Чаевые (%)</string>
+    <string name="just_tip">Чаевые</string>
 
 
     <string-array name="categoriesSpinner">

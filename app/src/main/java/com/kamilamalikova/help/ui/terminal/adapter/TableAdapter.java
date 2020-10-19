@@ -159,13 +159,6 @@ public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
     public void removeLoadingFooter() {
         isLoadingAdded = false;
-//        int position = eatingPlaceList.size() - 1;
-//        EatingPlace result = getItem(position);
-//
-//        if (result != null) {
-//            eatingPlaceList.remove(position);
-//            notifyItemRemoved(position);
-//        }
     }
 
     public void add (List<EatingPlace> eatingPlaces){
@@ -199,7 +192,6 @@ public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         TextView name;
         CardView cardView;
         EatingPlace eatingPlace;
-        Order order;
         AlertDialog.Builder builder;
 
         public ViewHolder(@NonNull final View itemView) {

@@ -142,12 +142,12 @@ public class DocumentFragment extends Fragment {
                 try {
                     JSONObject responseObject = new JSONObject(new String(responseBody));
                     StockDocument stockDocument = new StockDocument(responseObject);
-                    productItemObjectList.clear();
+                    ArrayList<ProductItemObject> productItemsToSave = new ArrayList<>();
                     for (int i = 0; i < docInventoryFinalListView.getAdapter().getCount(); i++){
                         ProductItemObject itemObject = (ProductItemObject) docInventoryFinalListView.getAdapter().getItem(i);
-                        if (itemObject.isChosen()) productItemObjectList.add(itemObject);
+                        if (itemObject.isChosen()) productItemsToSave.add(itemObject);
                     }
-                    saveInventory(stockDocument, productItemObjectList);
+                    saveInventory(stockDocument, productItemsToSave);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -178,7 +178,7 @@ public class DocumentFragment extends Fragment {
 
         ByteArrayEntity entity = null;
         try {
-            entity = new ByteArrayEntity(requestPackage.getStockInventoryJSONArray(stockDocument, productItemObjectList).toString().getBytes("UTF-8"));
+            entity = new ByteArrayEntity(requestPackage.getStockInventoryJSONArray(stockDocument, productItemObjects).toString().getBytes("UTF-8"));
         } catch (UnsupportedEncodingException | JSONException e) {
             e.printStackTrace();
         }

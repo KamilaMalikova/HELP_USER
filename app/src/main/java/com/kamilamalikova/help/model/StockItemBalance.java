@@ -1,6 +1,12 @@
 package com.kamilamalikova.help.model;
 
-public class StockItemBalance {
+import android.os.Parcel;
+import android.os.Parcelable;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+public class StockItemBalance implements Parcelable {
     private long id;
 
     private String name;
@@ -25,6 +31,37 @@ public class StockItemBalance {
         this.restaurant = restaurant;
     }
 
+    public StockItemBalance(JSONObject object) throws JSONException {
+        this.id = object.getLong("id");
+        this.name = object.getString("name");
+        this.unit = new Unit(object.getJSONObject("unit"));
+        this.category = new Category(object.getJSONObject("category"));
+        this.inStockQty = object.getDouble("inStockQty");
+        this.productId = object.getLong("inStockQty");
+        this.restaurant = object.getBoolean("restaurant");
+    }
+
+    protected StockItemBalance(Parcel in) {
+        id = in.readLong();
+        name = in.readString();
+        unit = in.readParcelable(Unit.class.getClassLoader());
+        category = in.readParcelable(Category.class.getClassLoader());
+        inStockQty = in.readDouble();
+        productId = in.readLong();
+        restaurant = in.readByte() != 0;
+    }
+
+    public static final Creator<StockItemBalance> CREATOR = new Creator<StockItemBalance>() {
+        @Override
+        public StockItemBalance createFromParcel(Parcel in) {
+            return new StockItemBalance(in);
+        }
+
+        @Override
+        public StockItemBalance[] newArray(int size) {
+            return new StockItemBalance[size];
+        }
+    };
 
     public long getId() {
         return id;
@@ -80,5 +117,21 @@ public class StockItemBalance {
 
     public void setRestaurant(boolean restaurant) {
         this.restaurant = restaurant;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeLong(this.id);
+        dest.writeString(this.name);
+        dest.writeParcelable(this.unit, flags);
+        dest.writeParcelable(this.category, flags);
+        dest.writeDouble(this.inStockQty);
+        dest.writeLong(this.productId);
+        dest.writeBoolean(this.restaurant);
     }
 }

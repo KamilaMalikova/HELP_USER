@@ -88,7 +88,9 @@ public class MenuFragment extends Fragment {
         menuListView.setAdapter(adapter);
         orderBtn = view.findViewById(R.id.orderBtn);
         searchMenuView = view.findViewById(R.id.searchMenuView);
+
         TextView orderNumTextView = view.findViewById(R.id.orderNumTextView);
+
         if (order != null) orderNumTextView.setText((getString(R.string.this_order)+" № "+order.getOrderId()));
         else orderNumTextView.setText(getString(R.string.this_order));
 

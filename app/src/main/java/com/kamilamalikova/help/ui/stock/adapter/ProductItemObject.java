@@ -3,28 +3,29 @@ package com.kamilamalikova.help.ui.stock.adapter;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class ProductItemObject implements Parcelable {
-    boolean isChosen;
-    String productName;
-    Double qty;
-    String id;
+import com.kamilamalikova.help.model.Product;
+import com.kamilamalikova.help.model.StockInventory;
+import com.kamilamalikova.help.model.StockItemBalance;
 
-    public ProductItemObject(boolean isChosen, String id, String productName, Double qty) {
+public class ProductItemObject implements Parcelable {
+    private boolean isChosen;
+    private StockItemBalance product;
+    private Double qty;
+
+    public ProductItemObject(boolean isChosen, StockItemBalance product, Double qty) {
         this.isChosen = isChosen;
-        this.productName = productName;
+        this.product = product;
         this.qty = qty;
-        this.id = id;
     }
 
     protected ProductItemObject(Parcel in) {
         isChosen = in.readByte() != 0;
-        productName = in.readString();
+        product = in.readParcelable(Product.class.getClassLoader());
         if (in.readByte() == 0) {
             qty = null;
         } else {
             qty = in.readDouble();
         }
-        id = in.readString();
     }
 
     public static final Creator<ProductItemObject> CREATOR = new Creator<ProductItemObject>() {
@@ -47,12 +48,12 @@ public class ProductItemObject implements Parcelable {
         isChosen = chosen;
     }
 
-    public String getProductName() {
-        return productName;
+    public StockItemBalance getProduct() {
+        return product;
     }
 
-    public void setProductName(String productName) {
-        this.productName = productName;
+    public void setProduct(StockItemBalance product) {
+        this.product = product;
     }
 
     public Double getQty() {
@@ -63,13 +64,6 @@ public class ProductItemObject implements Parcelable {
         this.qty = qty;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     @Override
     public int describeContents() {
@@ -79,8 +73,7 @@ public class ProductItemObject implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeBoolean(isChosen);
-        dest.writeString(productName);
+        dest.writeParcelable(product, flags);
         dest.writeDouble(qty);
-        dest.writeString(id);
     }
 }

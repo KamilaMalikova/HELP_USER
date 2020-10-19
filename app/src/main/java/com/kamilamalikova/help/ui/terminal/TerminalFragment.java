@@ -173,6 +173,7 @@ public class TerminalFragment extends Fragment {
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
             }
+
         });
     }
 

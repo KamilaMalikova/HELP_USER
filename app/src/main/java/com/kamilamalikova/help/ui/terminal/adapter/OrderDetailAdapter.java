@@ -1,6 +1,8 @@
 package com.kamilamalikova.help.ui.terminal.adapter;
 
 import android.content.Context;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -57,7 +59,7 @@ public class OrderDetailAdapter extends BaseAdapter {
         ImageButton minusFromMenuBtn = convertView.findViewById(R.id.minusFromMenuBtn);
         TextView menuItemNameTextView = convertView.findViewById(R.id.menuItemNameTextView);
         final TextView menuItemQtyTextView = convertView.findViewById(R.id.menuItemQtyTextView);
-        TextView menuItemCostTextView = convertView.findViewById(R.id.menuItemCostTextView);
+        final TextView menuItemCostTextView = convertView.findViewById(R.id.menuItemCostTextView);
         final EditText menuItemSelectedQtyEditText = convertView.findViewById(R.id.menuItemSelectedQtyTextView);
 
         menuItemQtyTextView.setVisibility(View.INVISIBLE);
@@ -67,22 +69,42 @@ public class OrderDetailAdapter extends BaseAdapter {
 
         menuItemId.setText((product.getId()+""));
         menuItemNameTextView.setText((product.getProductName()+""));
-        menuItemCostTextView.setText(("Цена: "+": "+product.getCost()));
+        menuItemCostTextView.setText(("Цена: "+": "+product.getCost()*product.getBuyQty()));
         menuItemSelectedQtyEditText.setText((product.getBuyQty()+""));
+
+        menuItemSelectedQtyEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                Double qty = (s.toString().isEmpty()) ? 0.0 : Double.parseDouble(s.toString());
+                if (qty > product.getInStockQty()){
+                    Toast.makeText(context, "Превышен лимит", Toast.LENGTH_LONG)
+                            .show();
+                } else if (qty < 0.0){
+                    Toast.makeText(context, "Значение не может быть отрицательным", Toast.LENGTH_LONG)
+                            .show();
+                }else {
+                    product.setBuyQty(qty);
+                    menuItemCostTextView.setText(("Цена: "+": "+product.getCost()*product.getBuyQty()));
+                }
+            }
+        });
 
         addFromMenuBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Double qty = (menuItemSelectedQtyEditText.getText().toString().isEmpty()) ? 0.0 : Double.parseDouble(menuItemSelectedQtyEditText.getText().toString());
                 qty+=1.0;
-                if (qty > product.getInStockQty()){
-                    Toast.makeText(finalConvertView.getContext(), "Превышен лимит", Toast.LENGTH_LONG)
-                            .show();
-                    return;
-                }
-                product.setBuyQty(qty);
-                menuItemSelectedQtyEditText.setText((product.getBuyQty()+""));
-                menuItemQtyTextView.setText(("Кол-во: "+" "+ (product.getInStockQty() - product.getBuyQty()) +""));
+                menuItemSelectedQtyEditText.setText((qty+""));
             }
         });
 
@@ -92,12 +114,7 @@ public class OrderDetailAdapter extends BaseAdapter {
             public void onClick(View v) {
                 Double qty = (menuItemSelectedQtyEditText.getText().toString().isEmpty()) ? 0.0 : Double.parseDouble(menuItemSelectedQtyEditText.getText().toString());
                 qty-=1.0;
-                product.setBuyQty(qty);
-                menuItemSelectedQtyEditText.setText((product.getBuyQty()+""));
-                menuItemQtyTextView.setText(("Кол-во: "+" "+ (product.getInStockQty() - product.getBuyQty()) +""));
-                if (qty < 0.0){
-                    return;
-                }
+                menuItemSelectedQtyEditText.setText((qty+""));
             }
         });
 

@@ -112,7 +112,6 @@ public class LogInActivity extends AppCompatActivity {
                         try {
                             File file = getDir("data", Context.MODE_PRIVATE);
                             File serFile = new File(file.getAbsoluteFile()+"/user.ser");
-                            file.createNewFile();
                             FileOutputStream fileOutputStream = new FileOutputStream(serFile, false);
                             ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
                             objectOutputStream.writeObject(user);
@@ -126,7 +125,16 @@ public class LogInActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                         Log.i("Failure", statusCode+"");
-                        Toast.makeText(getApplicationContext(), statusCode+" - "+error.getMessage(), Toast.LENGTH_LONG).show();
+                        switch (statusCode){
+                            case 403 :
+                                Toast.makeText(getApplicationContext(), "Неверный логин или пароль", Toast.LENGTH_LONG)
+                                        .show();
+                                break;
+                            default: Toast.makeText(getApplicationContext(), statusCode+" - "+error.getMessage(), Toast.LENGTH_LONG)
+                                    .show();
+                                break;
+                        }
+
                         error.getStackTrace();
                     }
                 });

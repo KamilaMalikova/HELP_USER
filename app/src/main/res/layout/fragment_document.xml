@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.stock.fragment.DocumentFragment"
-    android:orientation="vertical">
+    tools:context=".ui.stock.fragment.DocumentFragment">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -23,20 +27,24 @@
         android:contentDescription="@string/type"
         android:spinnerMode="dropdown"/>
     <androidx.coordinatorlayout.widget.CoordinatorLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content">
         <ListView
             android:id="@+id/docInventoryFinalListView"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" >
+            android:layout_height="match_parent" >
         </ListView>
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
+    </LinearLayout>
+
     <Button
         android:id="@+id/saveDocBtn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginVertical="10dp"
-        android:background="@drawable/button_border"
-        android:text="@string/save" />
+        android:layout_gravity="bottom|end"
+        android:background="@color/main_color"
+        android:text="@string/save"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp" />
 
-</LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

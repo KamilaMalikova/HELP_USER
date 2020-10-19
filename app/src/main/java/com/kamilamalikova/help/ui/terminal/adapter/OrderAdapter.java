@@ -63,7 +63,7 @@ public class OrderAdapter extends BaseAdapter {
         TextView menuItemNameTextView = convertView.findViewById(R.id.menuItemNameTextView);
         TextView menuItemQtyTextView = convertView.findViewById(R.id.menuItemQtyTextView);
         TextView menuItemCostTextView = convertView.findViewById(R.id.menuItemCostTextView);
-        final TextView menuItemSelectedQtyTextView = convertView.findViewById(R.id.menuItemSelectedQtyTextView);
+       final TextView menuItemSelectedQtyTextView = convertView.findViewById(R.id.menuItemSelectedQtyTextView);
 
         final OrderDetail orderDetail = order.getOrderDetails().get(position);
 
