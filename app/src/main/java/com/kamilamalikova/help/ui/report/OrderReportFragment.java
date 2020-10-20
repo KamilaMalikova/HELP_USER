@@ -1,70 +1,82 @@
-package com.kamilamalikova.help.ui.stock.fragment;
+package com.kamilamalikova.help.ui.report;
 
 import android.app.DatePickerDialog;
 import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.navigation.Navigation;
-import androidx.viewpager.widget.ViewPager;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import android.renderscript.ScriptGroup;
 import android.text.InputType;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Adapter;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.tabs.TabLayout;
 import com.jakewharton.threetenabp.AndroidThreeTen;
 import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.DOCTYPE;
+import com.kamilamalikova.help.model.LoggedInUser;
+import com.kamilamalikova.help.model.OrderReport;
 import com.kamilamalikova.help.model.URLs;
-import com.kamilamalikova.help.ui.settings.adapter.ViewPagerAdapter;
+import com.kamilamalikova.help.request.RequestPackage;
+import com.kamilamalikova.help.request.RequestType;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.threeten.bp.LocalDateTime;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Calendar;
 import java.util.Locale;
 
-public class InOutStockFragment extends Fragment {
+import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.entity.ByteArrayEntity;
+import cz.msebera.android.httpclient.message.BasicHeader;
+import cz.msebera.android.httpclient.protocol.HTTP;
 
-    volatile LayoutInflater layoutInflater;
-    volatile View view;
 
-    volatile TextView startDateDisplay;
-    volatile TextView endDateDisplay;
+public class OrderReportFragment extends Fragment {
+    LayoutInflater layoutInflater;
 
-    volatile DatePickerDialog.OnDateSetListener mDateStartSetListener;
-    volatile DatePickerDialog.OnDateSetListener mDateEndSetListener;
+    View view;
+    LocalDateTime start;
+    LocalDateTime end;
+
+    TextView startDateDisplay;
+    TextView endDateDisplay;
+
+    DatePickerDialog.OnDateSetListener mDateStartSetListener;
+    DatePickerDialog.OnDateSetListener mDateEndSetListener;
 
     PopupWindow popupWindow;
     Button filterBtn;
 
-    InStockFragment inStockFragment = new InStockFragment();
-    OutStockFragment outStockFragment = new OutStockFragment();
+    OrderReport report;
+    OrderReportAdapter adapter;
 
-    LocalDateTime start;
-    LocalDateTime end;
-
-    public InOutStockFragment() {
-        // Required empty public constructor
-    }
-
+    ListView orderReportListView;
+    SwipeRefreshLayout reportSwipeRefresh;
+    TextView sumNumberTextView;
+    TextView tipNumberTextView;
+    TextView allSumNumberTextView;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -76,28 +88,30 @@ public class InOutStockFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         AndroidThreeTen.init(getContext());
-        layoutInflater = inflater;
-        view = inflater.inflate(R.layout.fragment_in_out_stock, container, false);
+        this.layoutInflater = inflater;
+        view = inflater.inflate(R.layout.fragment_order_report, container, false);
 
-        ViewPager viewPager = view.findViewById(R.id.stockViewPager);
-        addTabs(viewPager);
-        ((TabLayout) view.findViewById(R.id.stockDocTabLayout)).setupWithViewPager(viewPager);
+        orderReportListView = view.findViewById(R.id.orderReportListView);
+        reportSwipeRefresh = view.findViewById(R.id.reportSwipeRefresh);
+        sumNumberTextView = view.findViewById(R.id.sumNumberTextView);
+        tipNumberTextView = view.findViewById(R.id.tipNumberTextView);
+        allSumNumberTextView = view.findViewById(R.id.allSumNumberTextView);
 
-        FloatingActionButton fab = view.findViewById(R.id.fabAddDoc);
-        fab.setOnClickListener(new View.OnClickListener() {
+        end = LocalDateTime.now();
+        start = LocalDateTime.of(end.getYear(), end.getMonth(), end.getDayOfMonth()-1, 0, 0, 0);
+        requestData(URLs.GET_REPORT.getName(), start, end);
+
+        reportSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
-            public void onClick(View v) {
-                Navigation.findNavController(view).navigate(R.id.nav_add_in_out_stock_doc);
+            public void onRefresh() {
+                end = LocalDateTime.now();
+                start = LocalDateTime.of(end.getYear(), end.getMonth(), end.getDayOfMonth()-1, 0, 0, 0);
+                requestData(URLs.GET_REPORT.getName(), start, end);
+                reportSwipeRefresh.setRefreshing(false);
             }
         });
-        return view;
-    }
 
-    private void addTabs(ViewPager viewPager) {
-        ViewPagerAdapter adapter = new ViewPagerAdapter(getChildFragmentManager());
-        adapter.addFrag(inStockFragment, getString(R.string.in));
-        adapter.addFrag(outStockFragment, getString(R.string.out));
-        viewPager.setAdapter(adapter);
+        return view;
     }
 
     @Override
@@ -202,20 +216,11 @@ public class InOutStockFragment extends Fragment {
                 }
             };
 
-//            popupView.setOnTouchListener(new View.OnTouchListener() {
-//                @Override
-//                public boolean onTouch(View v, MotionEvent event) {
-//
-//                    popupWindow.dismiss();
-//                    return true;
-//                }
-//            });
 
             filterBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    inStockFragment.requestData(URLs.GET_DOCS.getName()+"/0", DOCTYPE.IN.getName(), start, end);
-                    outStockFragment.requestData(URLs.GET_DOCS.getName()+"/0", DOCTYPE.OUT.getName(), start, end);
+                    requestData(URLs.GET_REPORT.getName(), start, end);
                     popupWindow.dismiss();
                 }
             });
@@ -224,5 +229,52 @@ public class InOutStockFragment extends Fragment {
     }
 
 
+    public void requestData(final String url, LocalDateTime from, LocalDateTime to){
+        final RequestPackage requestPackage = new RequestPackage();
+        requestPackage.setMethod(RequestType.GET);
+        requestPackage.setUrl(url);
+        if (from != null) requestPackage.setParam("from", from.toString());
+        if (to != null) requestPackage.setParam("to", to.toString());
 
+        ByteArrayEntity entity = null;
+        try {
+            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+
+        Log.i("SER", requestPackage.getFullUrl() + entity);
+        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
+
+        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
+
+        AsyncHttpClient client = new AsyncHttpClient();
+        assert loggedInUser != null;
+        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+
+        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                Log.i("Status", statusCode+" in");
+                try {
+                    JSONObject response = new JSONObject(new String(responseBody));
+                    report = new OrderReport(response);
+
+                    adapter = new OrderReportAdapter(getContext(), report.getOrderDetails());
+                    orderReportListView.setAdapter(adapter);
+                    adapter.notifyDataSetChanged();
+                    sumNumberTextView.setText((report.getSum()+" "+getString(R.string.uz_sum)));
+                    tipNumberTextView.setText((report.getTip_sum()+" "+getString(R.string.uz_sum)));
+                    allSumNumberTextView.setText((report.getAll_sum()+" "+getString(R.string.uz_sum)));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                Log.i("Status", statusCode+"");
+            }
+        });
+    }
 }

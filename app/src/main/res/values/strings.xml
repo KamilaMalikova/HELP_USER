@@ -107,6 +107,10 @@
     <string name="saved">Сохранено</string>
     <string name="tip">Чаевые (%)</string>
     <string name="just_tip">Чаевые</string>
+    <string name="report">Отчет</string>
+    <string name="summ">Общая сумма</string>
+    <string name="uz_sum">сум</string>
+    <string name="final_sum">Всего</string>
 
 
     <string-array name="categoriesSpinner">

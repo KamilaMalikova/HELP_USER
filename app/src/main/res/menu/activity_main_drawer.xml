@@ -33,6 +33,10 @@
             android:icon="@drawable/ic_baseline_people_alt_24"
             android:title="@string/users" />
 
+        <item
+            android:id="@+id/nav_report"
+            android:icon="@drawable/ic_baseline_assessment_24"
+            android:title="@string/report" />
 
     </group>
 </menu>

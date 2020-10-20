@@ -35,9 +35,6 @@ public class MenuAdapter extends BaseExpandableListAdapter {
     HashMap<String, List<Product>> productListHashMap;
     HashMap<String, List<Product>> productListHashMapOriginal;
 
-
-
-
     public MenuAdapter(Context context, JSONObject products, MenuFragment menuFragment) throws JSONException {
         this.context = context;
         this.menuFragment = menuFragment;
@@ -119,7 +116,7 @@ public class MenuAdapter extends BaseExpandableListAdapter {
         TextView menuItemId = convertView.findViewById(R.id.menuItemId);
         ImageButton addFromMenuBtn = convertView.findViewById(R.id.addFromMenuBtn);
         final TextView menuItemNameTextView = convertView.findViewById(R.id.menuItemNameTextView);
-        final TextView menuItemQtyTextView = convertView.findViewById(R.id.menuItemQtyTextView);
+        //final TextView menuItemQtyTextView = convertView.findViewById(R.id.menuItemQtyTextView);
         final TextView menuItemCostTextView = convertView.findViewById(R.id.menuItemCostTextView);
         final EditText menuItemSelectedQtyEditText = convertView.findViewById(R.id.menuItemSelectedQtyTextView);
 
@@ -130,7 +127,7 @@ public class MenuAdapter extends BaseExpandableListAdapter {
 
         menuItemId.setText((product.getId()+""));
         menuItemNameTextView.setText((product.getProductName()+""));
-        menuItemQtyTextView.setText(("Кол-во: "+" "+(product.getInStockQty() - product.getBuyQty())+""));
+        //menuItemQtyTextView.setText(("Кол-во: "+" "+(product.getInStockQty() - product.getBuyQty())+""));
         menuItemCostTextView.setText(("Цена: "+": "+product.getCost()));
 
         menuItemSelectedQtyEditText.addTextChangedListener(new TextWatcher() {
@@ -147,15 +144,16 @@ public class MenuAdapter extends BaseExpandableListAdapter {
             @Override
             public void afterTextChanged(Editable s) {
                 Double qty = (s.toString().isEmpty()) ? 0.0 : Double.parseDouble(s.toString());
-                if (qty > product.getInStockQty()){
-                    Toast.makeText(context, "Превышен лимит", Toast.LENGTH_LONG)
-                            .show();
-                } else if (qty < 0.0){
+//                if (qty > product.getInStockQty()){
+//                    Toast.makeText(context, "Превышен лимит", Toast.LENGTH_LONG)
+//                            .show();
+//                } else
+                if (qty < 0.0){
                     Toast.makeText(context, "Значение не может быть отрицательным", Toast.LENGTH_LONG)
                             .show();
                 }else {
                     product.setBuyQty(qty);
-                    menuItemQtyTextView.setText(("Кол-во: "+" "+ (product.getInStockQty() - product.getBuyQty()) +""));
+                    //menuItemQtyTextView.setText(("Кол-во: "+" "+ (product.getInStockQty() - product.getBuyQty()) +""));
                     menuFragment.orderedProducts.add(product);
                     menuFragment.orderBtn.setText((context.getText(R.string.order)+" ("+menuFragment.orderedProducts.size()+")"));
                 }
