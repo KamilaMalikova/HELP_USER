@@ -111,12 +111,13 @@ public class OutStockFragment extends Fragment {
                 Log.i("Status", statusCode+" out");
                 try {
                     JSONArray responseArray;
-                    if (url.endsWith(URLs.GET_ITEMS.getName())){
-                        responseArray = new JSONArray(new String(responseBody));
-                    }else {
-                        JSONObject responseObject = new JSONObject(new String(responseBody));
-                        responseArray = (JSONArray)responseObject.get("content");
-                    }
+//                    if (url.endsWith(URLs.GET_ITEMS.getName())){
+//                        responseArray = new JSONArray(new String(responseBody));
+//                    }else {
+//                        JSONObject responseObject = new JSONObject(new String(responseBody));
+//                        responseArray = (JSONArray)responseObject.get("content");
+//                    }
+                    responseArray = new JSONArray(new String(responseBody));
                     Log.i("response", responseArray.toString());
                     StockDocAdapter docAdapter = new StockDocAdapter(getContext(), responseArray);
                     outStockListView.setAdapter(docAdapter);

@@ -111,6 +111,12 @@
     <string name="summ">Общая сумма</string>
     <string name="uz_sum">сум</string>
     <string name="final_sum">Всего</string>
+    <string name="table_i_serve">Я обслуживаю</string>
+    <string name="logout">Выйти</string>
+    <string name="order_history">История заказов</string>
+    <string name="order_status">Статус заказа</string>
+    <string name="waiter">Официант</string>
+    <string name="from">От</string>
 
 
     <string-array name="categoriesSpinner">

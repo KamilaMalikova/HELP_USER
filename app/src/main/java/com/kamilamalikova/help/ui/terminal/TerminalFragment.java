@@ -1,20 +1,39 @@
 package com.kamilamalikova.help.ui.terminal;
 
+import android.app.DatePickerDialog;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import android.text.InputType;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.DatePicker;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.ProgressBar;
+import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.kamilamalikova.help.R;
+import com.kamilamalikova.help.model.DOCTYPE;
 import com.kamilamalikova.help.model.EatingPlace;
+import com.kamilamalikova.help.model.TableType;
+import com.kamilamalikova.help.ui.terminal.adapter.TableFilterAdapter;
 import com.kamilamalikova.help.ui.terminal.listeners.PaginationScrollListener;
 import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.model.URLs;
@@ -27,9 +46,13 @@ import com.loopj.android.http.AsyncHttpResponseHandler;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.threeten.bp.LocalDateTime;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Locale;
+import java.util.zip.Inflater;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.ByteArrayEntity;
@@ -40,17 +63,24 @@ public class TerminalFragment extends Fragment {
 
     RecyclerView tablesList;
     ProgressBar progressBar;
-
     TableAdapter adapter;
     GridLayoutManager gridLayoutManager;
-
     SwipeRefreshLayout swipeRefreshLayout;
+    View view;
+    Spinner tableTypeSpinner;
+    TableFilterAdapter filterAdapter;
+
+    boolean all = true;
+    boolean reserved = false;
+    boolean my = false;
 
     private static final int PAGE_START = 0;
     private boolean isLoading = false;
     private boolean isLastPage = false;
     private int TOTAL_PAGES = 5;
     private int currentPage = PAGE_START;
+    private LayoutInflater layoutInflater;
+    private PopupWindow popupWindow;
 
     public TerminalFragment() {
         // Required empty public constructor
@@ -59,6 +89,7 @@ public class TerminalFragment extends Fragment {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        setHasOptionsMenu(true);
         super.onCreate(savedInstanceState);
 
     }
@@ -67,22 +98,25 @@ public class TerminalFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        View view = inflater.inflate(R.layout.fragment_terminal, container, false);
-
+        view = inflater.inflate(R.layout.fragment_terminal, container, false);
+        this.layoutInflater = inflater;
         tablesList = view.findViewById(R.id.dataList);
         progressBar = view.findViewById(R.id.tablesProgressBar);
 
         swipeRefreshLayout = view.findViewById(R.id.terminalSwipeRefresh);
 
-        gridLayoutManager = new GridLayoutManager(getContext(), 2, GridLayoutManager.VERTICAL, false);
+        gridLayoutManager = new GridLayoutManager(getContext(), 2);
         adapter = new TableAdapter(getContext(), getActivity());
+
+        tablesList.setAdapter(adapter);
+        tablesList.setLayoutManager(gridLayoutManager);
 
         tablesList.addOnScrollListener(new PaginationScrollListener(gridLayoutManager) {
             @Override
             protected void loadMoreItems() {
                 isLoading = true;
                 currentPage += 1;
-                requestData(URLs.GET_TABLES.getName()+"/"+currentPage);
+                requestData(URLs.GET_TABLES.getName()+"/"+currentPage, all, reserved, my);
             }
 
             @Override
@@ -96,7 +130,7 @@ public class TerminalFragment extends Fragment {
             }
         });
 
-        requestData(URLs.GET_TABLES.getName()+"/"+currentPage);
+        requestData(URLs.GET_TABLES.getName()+"/"+currentPage, all, reserved, my);
 
 
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -108,17 +142,93 @@ public class TerminalFragment extends Fragment {
                 currentPage = PAGE_START;
                 swipeRefreshLayout.setRefreshing(false);
                 adapter.setEatingPlaceList(new ArrayList<EatingPlace>());
-                requestData(URLs.GET_TABLES.getName()+"/"+currentPage);
+                all = true;
+                reserved = false;
+                my = false;
+                requestData(URLs.GET_TABLES.getName()+"/"+currentPage, true, false, false);
             }
         });
 
         return view;
     }
 
-    public void requestData(final String url){
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        inflater.inflate(R.menu.filter_menu, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.filter){
+            View popupView = layoutInflater.inflate(R.layout.tables_filter, null);
+            int width = LinearLayout.LayoutParams.MATCH_PARENT;
+            int height = LinearLayout.LayoutParams.WRAP_CONTENT;
+
+            popupWindow = new PopupWindow(popupView, width, height, true);
+            popupWindow.setTouchable(true);
+            popupWindow.setOutsideTouchable(true);
+            //popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            popupWindow.setFocusable(true);
+
+            popupWindow.showAtLocation(popupView, Gravity.CENTER, 0, 0);
+            tableTypeSpinner = popupView.findViewById(R.id.tableTypeSpinner);
+            filterAdapter = new TableFilterAdapter(getContext());
+            tableTypeSpinner.setAdapter(filterAdapter);
+
+            final SwitchCompat iReserveSwitch = popupView.findViewById(R.id.iReserveSwitch);
+
+            Button filterBtn = popupView.findViewById(R.id.filterTablesBtn);
+
+            filterBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    switch ((TableType)tableTypeSpinner.getSelectedItem()){
+                        case ALL:
+                            all = true;
+                            break;
+                        case FREE:
+                            all = false;
+                            my = false;
+                            reserved = false;
+                            break;
+                        case RESERVED:
+                            all = false;
+                            reserved = true;
+                    }
+                    if (iReserveSwitch.isChecked()){
+                        my = true;
+                    }
+                    isLoading = false;
+                    isLastPage = false;
+                    TOTAL_PAGES = 5;
+                    currentPage = PAGE_START;
+                    swipeRefreshLayout.setRefreshing(false);
+                    adapter.setEatingPlaceList(new ArrayList<EatingPlace>());
+                    requestData(URLs.GET_TABLES.getName()+"/"+currentPage, all, reserved, my);
+                    popupWindow.dismiss();
+                }
+            });
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    public void requestData(final String url, boolean all, boolean reserved, boolean my){
         final RequestPackage requestPackage = new RequestPackage();
         requestPackage.setMethod(RequestType.GET);
         requestPackage.setUrl(url);
+
+        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
+        assert loggedInUser != null;
+        if (my) {
+            requestPackage.setParam("username", loggedInUser.getUsername());
+            requestPackage.setParam("reserved", "1");
+        }
+        else if (!all){
+            if (reserved) requestPackage.setParam("reserved", "1");
+            else requestPackage.setParam("reserved", "0");
+        }
 
         ByteArrayEntity entity = null;
         try {
@@ -131,13 +241,12 @@ public class TerminalFragment extends Fragment {
         Log.i("SER", requestPackage.getFullUrl() + entity);
         Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
 
-        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
 
         AsyncHttpClient client = new AsyncHttpClient();
-        assert loggedInUser != null;
+
         client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
 
-        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+        client.get(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+" in");
@@ -160,8 +269,7 @@ public class TerminalFragment extends Fragment {
                     progressBar.setVisibility(View.GONE);
                     isLoading = false;
                     adapter.add(responseArray);
-                    tablesList.setLayoutManager(gridLayoutManager);
-                    tablesList.setAdapter(adapter);
+
                     if (!isLastPage) adapter.addLoadingFooter();
                     else adapter.removeLoadingFooter();
 
@@ -171,7 +279,7 @@ public class TerminalFragment extends Fragment {
             }
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                Log.i("Status", statusCode+"");
+                Log.i("Status", statusCode+new String(responseBody));
             }
 
         });

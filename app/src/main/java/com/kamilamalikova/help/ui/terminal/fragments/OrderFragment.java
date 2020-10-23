@@ -188,7 +188,7 @@ public class OrderFragment extends Fragment {
         requestPackage.setMethod(RequestType.POST);
         requestPackage.setUrl(url);
 
-        List<Product> productsToSave = new ArrayList<>();
+        final List<Product> productsToSave = new ArrayList<>();
         for (Product product: products) {
             if (product.getBuyQty() != 0.0) productsToSave.add(product);
         }
@@ -221,6 +221,7 @@ public class OrderFragment extends Fragment {
                     openMenuBtn.setText(getString(R.string.menu));
                     adapter.setOrder(order);
                     adapter.notifyDataSetChanged();
+                    newOrderDetails = null;
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }

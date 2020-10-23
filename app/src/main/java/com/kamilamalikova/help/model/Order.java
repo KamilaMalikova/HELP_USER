@@ -38,11 +38,14 @@ public class Order implements Parcelable {
 
         try {
             JSONArray array = response.getJSONArray("orderDetails");
-            if (array.length() > 0)
+            if (array.length() > 0){
                 for (int i = 0; i < array.length(); i++) {
                     JSONObject object = array.getJSONObject(i);
                     orderDetails.add(new OrderDetail(object));
                 }
+                insertionSort(orderDetails);
+            }
+
         }catch (Exception ex){
             this.orderDetails = new ArrayList<>();
             ex.printStackTrace();
@@ -50,6 +53,18 @@ public class Order implements Parcelable {
 
     }
 
+    public static void insertionSort(List<OrderDetail> array) {
+        for (int i = 1; i < array.size(); i++) {
+            OrderDetail current = array.get(i);
+            int j = i - 1;
+            while(j >= 0 && current.getId() < array.get(i).getId()) {
+                array.set(j+1, array.get(j));
+                j--;
+            }
+
+            array.set(j+1, current);
+        }
+    }
 
     protected Order(Parcel in) {
         orderId = in.readLong();
@@ -100,6 +115,13 @@ public class Order implements Parcelable {
         return dateTime;
     }
 
+    public double getSum(){
+        double sum = 0;
+        for (OrderDetail orderDetail: orderDetails) {
+            sum+=orderDetail.getCost();
+        }
+        return sum;
+    }
     @Override
     public int describeContents() {
         return 0;

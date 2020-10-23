@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.util.Log;
@@ -13,18 +14,21 @@ import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.ExpandableListView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 
 import com.jakewharton.threetenabp.AndroidThreeTen;
 import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.DOCTYPE;
 import com.kamilamalikova.help.model.FileStream;
 import com.kamilamalikova.help.model.LoggedInUser;
+import com.kamilamalikova.help.model.Role;
 import com.kamilamalikova.help.model.StartIntent;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
 import com.kamilamalikova.help.ui.products.adapter.ProductItemAdapter;
 import com.kamilamalikova.help.ui.stock.adapter.StockDocAdapter;
+import com.kamilamalikova.help.ui.users.listener.PagginationLinerScrollListener;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
@@ -49,7 +53,6 @@ public class InStockFragment extends Fragment {
     ExpandableListView inStockListView;
 
     StockDocAdapter docAdapter;
-
     private static final int PAGE_START = 0;
     private int currentPage = PAGE_START;
 
@@ -123,12 +126,13 @@ public class InStockFragment extends Fragment {
                 Log.i("Status", statusCode+" in");
                 try {
                     JSONArray responseArray;
-                    if (url.endsWith(URLs.GET_ITEMS.getName())){
-                        responseArray = new JSONArray(new String(responseBody));
-                    }else {
-                        JSONObject responseObject = new JSONObject(new String(responseBody));
-                        responseArray = (JSONArray)responseObject.get("content");
-                    }
+//                    if (url.endsWith(URLs.GET_ITEMS.getName())){
+//                        responseArray = new JSONArray(new String(responseBody));
+//                    }else {
+//                        JSONObject responseObject = new JSONObject(new String(responseBody));
+//                        responseArray = (JSONArray)responseObject.get("content");
+//                    }
+                    responseArray = new JSONArray(new String(responseBody));
                     Log.i("response", responseArray.toString());
                     docAdapter.init();
                     docAdapter.add(responseArray);

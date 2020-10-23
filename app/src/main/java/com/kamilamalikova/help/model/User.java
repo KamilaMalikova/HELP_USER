@@ -2,6 +2,7 @@ package com.kamilamalikova.help.model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.widget.Filterable;
 
 import org.json.JSONException;
 import org.json.JSONObject;

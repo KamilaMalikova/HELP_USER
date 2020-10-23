@@ -86,10 +86,7 @@ public class OrderDetailAdapter extends BaseAdapter {
             @Override
             public void afterTextChanged(Editable s) {
                 Double qty = (s.toString().isEmpty()) ? 0.0 : Double.parseDouble(s.toString());
-                if (qty > product.getInStockQty()){
-                    Toast.makeText(context, "Превышен лимит", Toast.LENGTH_LONG)
-                            .show();
-                } else if (qty < 0.0){
+                if (qty < 0.0){
                     Toast.makeText(context, "Значение не может быть отрицательным", Toast.LENGTH_LONG)
                             .show();
                 }else {

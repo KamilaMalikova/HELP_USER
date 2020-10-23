@@ -85,6 +85,7 @@ public class UsersFragment extends Fragment {
         filterByRoleSpinner = view.findViewById(R.id.filterByRoleSpinner);
         roleAdapter = new RoleAdapter(getContext());
         roleAdapter.add(0, Role.ALL);
+
         filterByRoleSpinner.setAdapter(roleAdapter);
         usersSearchView = view.findViewById(R.id.usersSearchView);
 
@@ -96,7 +97,9 @@ public class UsersFragment extends Fragment {
         layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
         adapter = new UsersAdapter(getContext(), view);
 
-      //  adapter.setUsersList(new ArrayList<User>());
+        usersList.setLayoutManager(layoutManager);
+        usersList.setAdapter(adapter);
+
         usersList.addOnScrollListener(new PagginationLinerScrollListener(layoutManager) {
             @Override
             protected void loadMoreItems() {
@@ -106,7 +109,6 @@ public class UsersFragment extends Fragment {
                 if (role == Role.ALL) role = null;
                 String query = usersSearchView.getQuery().toString();
                 if (query.isEmpty()) query = null;
-
                 requestData(URLs.GET_USERS.getName()+"/"+currentPage, query, role);
             }
 
@@ -124,13 +126,18 @@ public class UsersFragment extends Fragment {
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                isLoading = false;
-                isLastPage = false;
-                TOTAL_PAGES = 5;
-                currentPage = PAGE_START;
-                swipeRefreshLayout.setRefreshing(false);
-                adapter.setUsersList(new ArrayList<User>());
-                requestData(URLs.GET_USERS.getName()+"/"+currentPage, null, null);
+                try {
+                    isLoading = false;
+                    isLastPage = false;
+                    TOTAL_PAGES = 5;
+                    currentPage = PAGE_START;
+                    adapter.init();
+                    requestData(URLs.GET_USERS.getName()+"/"+currentPage, null, null);
+                    swipeRefreshLayout.setRefreshing(false);
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+
             }
         });
         FloatingActionButton fab = view.findViewById(R.id.fab);
@@ -150,7 +157,7 @@ public class UsersFragment extends Fragment {
                 isLastPage = false;
                 TOTAL_PAGES = 5;
                 currentPage = PAGE_START;
-                adapter.setUsersList(new ArrayList<User>());
+                adapter.init();
                 requestData(URLs.GET_USERS.getName()+"/"+currentPage, null, role);
             }
 
@@ -173,16 +180,18 @@ public class UsersFragment extends Fragment {
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                if (!newText.isEmpty())
+                //if (!newText.isEmpty())
                     adapter.filter(newText);
                 return false;
             }
+
         });
+
         usersSearchView.setOnCloseListener(new SearchView.OnCloseListener() {
             @Override
             public boolean onClose() {
                 adapter.filter("");
-                Keyboard.hideKeyboard(getContext());
+                //Keyboard.hideKeyboard(getContext());
                 return false;
             }
         });
@@ -238,8 +247,6 @@ public class UsersFragment extends Fragment {
                     progressBar.setVisibility(View.GONE);
                     isLoading = false;
                     adapter.add(responseArray);
-                    usersList.setLayoutManager(layoutManager);
-                    usersList.setAdapter(adapter);
                     if (!isLastPage) adapter.addLoadingFooter();
                     else adapter.removeLoadingFooter();
 

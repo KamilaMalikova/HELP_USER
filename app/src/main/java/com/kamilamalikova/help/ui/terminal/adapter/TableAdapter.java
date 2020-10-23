@@ -154,9 +154,11 @@ public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
     public void addLoadingFooter(){
         isLoadingAdded = true;
-        //add("null", 0, "free", false, false);
+        add("null", 0, "free", false, false);
     }
-
+    public void removeLast(){
+        eatingPlaceList.remove(eatingPlaceList.size()-1);
+    }
     public void removeLoadingFooter() {
         isLoadingAdded = false;
     }
@@ -167,7 +169,7 @@ public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
     public void add (String waiterUsername, int tableId, String waiterName, boolean reserved, boolean active){
         this.eatingPlaceList.add(new EatingPlace(tableId, reserved, waiterUsername, waiterName, active));
-        notifyItemInserted(this.eatingPlaceList.size()-1);
+        notifyDataSetChanged();
     }
 
     public EatingPlace getItem(int position){
@@ -175,6 +177,9 @@ public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     }
 
     public void add(JSONArray paramsArray) throws JSONException {
+        if (eatingPlaceList.size()>0){
+            removeLast();
+        }
         for (int i = 0; i < paramsArray.length(); i++) {
             JSONObject object = paramsArray.getJSONObject(i);
             this.eatingPlaceList.add(new EatingPlace(object.getInt("id"),
@@ -183,7 +188,7 @@ public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                     object.getString("waiterName"),
                     object.getBoolean("active")));
         }
-        notifyItemInserted(this.eatingPlaceList.size()-1);
+        notifyDataSetChanged();
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder{
@@ -226,7 +231,14 @@ public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                         alertDialog.show();
                     }
                     else {
-                        requestOrder(URLs.GET_ORDERS.getName()+"/0", eatingPlace, itemView);
+                        if (eatingPlace.getWaiterUsername().equals(user.getUsername())){
+                            requestOrder(URLs.GET_ORDERS.getName()+"/0", eatingPlace, itemView);
+                        }else {
+                            Toast.makeText(context, "Вы не обслуживаете данный стол!", Toast.LENGTH_LONG)
+                                    .show();
+                            return;
+                        }
+
                     }
                 }
             });

@@ -49,8 +49,7 @@ public class ItemAdapter extends BaseAdapter {
     public Object getItem(int position) {
         return new SettingsObject(index[position],items[position]);
     }
-
-
+    
     @Override
     public long getItemId(int position) {
         return position;

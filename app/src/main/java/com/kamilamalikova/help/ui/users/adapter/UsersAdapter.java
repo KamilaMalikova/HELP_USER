@@ -109,11 +109,12 @@ public class UsersAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
     public void addLoadingFooter(String username, String password, String name, String lastname, Role role){
         isLoadingAdded = true;
-        add(username, password, name, lastname, role);
+        //add(username, password, name, lastname, role);
     }
 
     public void addLoadingFooter(){
         isLoadingAdded = true;
+//        add(null, null, null, null, Role.NOTWORKING);
     }
 
     public void removeLoadingFooter() {
@@ -121,17 +122,21 @@ public class UsersAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     }
 
     public void add (List<User> users){
+//        if (usersOrigin.size() > 0){
+//            usersOrigin.remove(usersOrigin.size()-1);
+//            users.remove(users.size()-1);
+//        }
         for (User user: users) {
             this.users.add(user);
             this.usersOrigin.add(user);
         }
-        notifyItemInserted(this.users.size()-1);
+        notifyDataSetChanged();
     }
 
     public void add (String username, String password, String name, String lastname, Role role){
         this.users.add(new User(username, password, name, lastname, role));
         this.usersOrigin.add(new User(username, password, name, lastname, role));
-        notifyItemInserted(this.users.size()-1);
+        notifyDataSetChanged();
     }
 
     public User getItem(int position){
@@ -139,12 +144,16 @@ public class UsersAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     }
 
     public void add(JSONArray paramsArray) throws JSONException {
+//        if (usersOrigin.size() > 0){
+//            usersOrigin.remove(usersOrigin.size()-1);
+//            users.remove(users.size()-1);
+//        }
         for (int i = 0; i < paramsArray.length(); i++) {
             JSONObject object = paramsArray.getJSONObject(i);
             this.users.add(new User(object));
             this.usersOrigin.add(new User(object));
         }
-        notifyItemInserted(this.users.size()-1);
+        notifyDataSetChanged();
     }
 
     public void setUsersList(ArrayList<User> users) {
@@ -152,6 +161,11 @@ public class UsersAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         this.users.addAll(users);
         this.usersOrigin.clear();
         this.usersOrigin.addAll(users);
+    }
+
+    public void init() {
+        this.usersOrigin.clear();
+        this.users.clear();
     }
 
     public class LoadingViewHolder extends RecyclerView.ViewHolder {

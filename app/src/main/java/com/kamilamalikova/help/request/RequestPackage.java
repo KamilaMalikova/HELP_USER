@@ -192,7 +192,7 @@ public class RequestPackage {
 
     public String getFullUrl(){
         if (!method.equals(RequestType.GET)) return url;
-        else if (params != null || !params.isEmpty())return this.url+"/?"+getEncodedParams();
+        else if (params != null || !params.isEmpty())return this.url+"?"+getEncodedParams();
         else return url;
     }
 
