@@ -117,6 +117,9 @@
     <string name="order_status">Статус заказа</string>
     <string name="waiter">Официант</string>
     <string name="from">От</string>
+    <string name="logIn_system">Вход в систему</string>
+    <string name="autorization_error_wrong_password">Ошибка авторизации! Неверный логин или пароль</string>
+    <string name="content_type">application/json</string>
 
 
     <string-array name="categoriesSpinner">

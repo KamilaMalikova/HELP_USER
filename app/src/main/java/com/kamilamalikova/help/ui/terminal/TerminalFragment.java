@@ -32,6 +32,8 @@ import android.widget.Toast;
 import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.DOCTYPE;
 import com.kamilamalikova.help.model.EatingPlace;
+import com.kamilamalikova.help.model.ResponseErrorHandler;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.TableType;
 import com.kamilamalikova.help.ui.terminal.adapter.TableFilterAdapter;
 import com.kamilamalikova.help.ui.terminal.listeners.PaginationScrollListener;
@@ -60,6 +62,9 @@ import cz.msebera.android.httpclient.message.BasicHeader;
 import cz.msebera.android.httpclient.protocol.HTTP;
 
 public class TerminalFragment extends Fragment {
+
+    SessionManager sessionManager;
+    LoggedInUser loggedInUser;
 
     RecyclerView tablesList;
     ProgressBar progressBar;
@@ -97,26 +102,36 @@ public class TerminalFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
+        // Init view
         view = inflater.inflate(R.layout.fragment_terminal, container, false);
+
+        sessionManager = new SessionManager(view.getContext());
+        loggedInUser = new LoggedInUser(sessionManager);
+
         this.layoutInflater = inflater;
+        // Init widgets
         tablesList = view.findViewById(R.id.dataList);
         progressBar = view.findViewById(R.id.tablesProgressBar);
-
         swipeRefreshLayout = view.findViewById(R.id.terminalSwipeRefresh);
-
-        gridLayoutManager = new GridLayoutManager(getContext(), 2);
-        adapter = new TableAdapter(getContext(), getActivity());
-
+        //Init Tables GridLayoutManager
+        gridLayoutManager = new GridLayoutManager(view.getContext(), 2);
+        //Init tables adapter
+        adapter = new TableAdapter(view.getContext(), getActivity());
+        //Set layout manager and adapter
         tablesList.setAdapter(adapter);
         tablesList.setLayoutManager(gridLayoutManager);
 
+        // Set on scroll listener for pagination
         tablesList.addOnScrollListener(new PaginationScrollListener(gridLayoutManager) {
             @Override
             protected void loadMoreItems() {
                 isLoading = true;
                 currentPage += 1;
-                requestData(URLs.GET_TABLES.getName()+"/"+currentPage, all, reserved, my);
+                try {
+                    requestData(URLs.GET_TABLES.getName()+"/"+currentPage, all, reserved, my);
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
             }
 
             @Override
@@ -130,9 +145,14 @@ public class TerminalFragment extends Fragment {
             }
         });
 
-        requestData(URLs.GET_TABLES.getName()+"/"+currentPage, all, reserved, my);
+        // Request table data for the first time
+        try {
+            requestData(URLs.GET_TABLES.getName()+"/"+currentPage, all, reserved, my);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
 
-
+        //Set refreshing listener. Configure request params as default
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
@@ -145,7 +165,11 @@ public class TerminalFragment extends Fragment {
                 all = true;
                 reserved = false;
                 my = false;
-                requestData(URLs.GET_TABLES.getName()+"/"+currentPage, true, false, false);
+                try {
+                    requestData(URLs.GET_TABLES.getName()+"/"+currentPage, true, false, false);
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
             }
         });
 
@@ -154,12 +178,14 @@ public class TerminalFragment extends Fragment {
 
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        // Set filter menu
         inflater.inflate(R.menu.filter_menu, menu);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        //Filter clicked
         if (item.getItemId() == R.id.filter){
             View popupView = layoutInflater.inflate(R.layout.tables_filter, null);
             int width = LinearLayout.LayoutParams.MATCH_PARENT;
@@ -173,7 +199,7 @@ public class TerminalFragment extends Fragment {
 
             popupWindow.showAtLocation(popupView, Gravity.CENTER, 0, 0);
             tableTypeSpinner = popupView.findViewById(R.id.tableTypeSpinner);
-            filterAdapter = new TableFilterAdapter(getContext());
+            filterAdapter = new TableFilterAdapter(view.getContext());
             tableTypeSpinner.setAdapter(filterAdapter);
 
             final SwitchCompat iReserveSwitch = popupView.findViewById(R.id.iReserveSwitch);
@@ -206,7 +232,11 @@ public class TerminalFragment extends Fragment {
                     currentPage = PAGE_START;
                     swipeRefreshLayout.setRefreshing(false);
                     adapter.setEatingPlaceList(new ArrayList<EatingPlace>());
-                    requestData(URLs.GET_TABLES.getName()+"/"+currentPage, all, reserved, my);
+                    try {
+                        requestData(URLs.GET_TABLES.getName()+"/"+currentPage, all, reserved, my);
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
                     popupWindow.dismiss();
                 }
             });
@@ -214,13 +244,12 @@ public class TerminalFragment extends Fragment {
         return super.onOptionsItemSelected(item);
     }
 
-    public void requestData(final String url, boolean all, boolean reserved, boolean my){
-        final RequestPackage requestPackage = new RequestPackage();
+
+    public RequestPackage getRequestPackage(String url, boolean all, boolean reserved, boolean my){
+        RequestPackage requestPackage = new RequestPackage(view.getContext());
         requestPackage.setMethod(RequestType.GET);
         requestPackage.setUrl(url);
 
-        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
-        assert loggedInUser != null;
         if (my) {
             requestPackage.setParam("username", loggedInUser.getUsername());
             requestPackage.setParam("reserved", "1");
@@ -229,29 +258,19 @@ public class TerminalFragment extends Fragment {
             if (reserved) requestPackage.setParam("reserved", "1");
             else requestPackage.setParam("reserved", "0");
         }
+        return requestPackage;
+    }
 
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-
+    public void requestData(final String url, boolean all, boolean reserved, boolean my) throws UnsupportedEncodingException {
+        RequestPackage requestPackage = getRequestPackage(url, all, reserved, my);
         AsyncHttpClient client = new AsyncHttpClient();
-
         client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
-
-        client.get(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
+        //Send get request with params
+        client.get(view.getContext(), requestPackage.getFullUrl(), requestPackage.getBytes(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+" in");
                 try {
-
                     JSONArray responseArray;
                     if (url.endsWith(URLs.GET_ITEMS.getName())){
                         responseArray = new JSONArray(new String(responseBody));
@@ -269,7 +288,6 @@ public class TerminalFragment extends Fragment {
                     progressBar.setVisibility(View.GONE);
                     isLoading = false;
                     adapter.add(responseArray);
-
                     if (!isLastPage) adapter.addLoadingFooter();
                     else adapter.removeLoadingFooter();
 
@@ -280,6 +298,7 @@ public class TerminalFragment extends Fragment {
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+new String(responseBody));
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
 
         });

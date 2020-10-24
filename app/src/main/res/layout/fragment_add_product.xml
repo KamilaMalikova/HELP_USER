@@ -69,18 +69,18 @@
         android:layout_marginVertical="20dp"
         android:importantForAutofill="no" />
 
-    <EditText
-        android:id="@+id/quantityTextNumberDecimal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/quantity"
-        android:ems="10"
-        android:textSize="20sp"
-        android:backgroundTint="#009688"
-        android:inputType="numberDecimal"
-        android:layout_marginHorizontal="20dp"
-        android:layout_marginVertical="20dp"
-        android:importantForAutofill="no" />
+<!--    <EditText-->
+<!--        android:id="@+id/quantityTextNumberDecimal"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:hint="@string/quantity"-->
+<!--        android:ems="10"-->
+<!--        android:textSize="20sp"-->
+<!--        android:backgroundTint="#009688"-->
+<!--        android:inputType="numberDecimal"-->
+<!--        android:layout_marginHorizontal="20dp"-->
+<!--        android:layout_marginVertical="20dp"-->
+<!--        android:importantForAutofill="no" />-->
 
     <Button
         android:id="@+id/addProductSaveBtn"

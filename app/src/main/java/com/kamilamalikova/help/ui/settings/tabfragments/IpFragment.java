@@ -18,6 +18,7 @@ import android.widget.Toast;
 import com.kamilamalikova.help.MainActivity;
 import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.Keyboard;
+import com.kamilamalikova.help.model.SessionManager;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,6 +30,7 @@ import java.io.ObjectOutputStream;
 
 
 public class IpFragment extends Fragment {
+    SessionManager sessionManager;
     View view;
     EditText ipEditText;
     @Override
@@ -40,50 +42,23 @@ public class IpFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_ip, container, false);
+        sessionManager = new SessionManager(view.getContext());
         ipEditText = view.findViewById(R.id.ipEditText);
         Button saveIp = view.findViewById(R.id.saveIpBtn);
-
-
-
-        try {
-            @SuppressLint("SdCardPath") File file = new File("/data/user/0/com.kamilamalikova.help/app_data/");
-            File serFile = new File(file.getAbsoluteFile()+"/ip.ser");
-            Log.i("File", serFile.getAbsolutePath());
-            FileInputStream streamIn = new FileInputStream(serFile);
-            ObjectInputStream objectInputStream = new ObjectInputStream(streamIn);
-            String server = (String)objectInputStream.readObject();
-            this.ipEditText.setText(server);
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        String server = sessionManager.getIp();
+        this.ipEditText.setText(server);
 
         saveIp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String ip = ipEditText.getText().toString();
-                saveSerializable(ip);
-                Keyboard.hideKeyboard(getContext());
-                Toast.makeText(getContext(), getString(R.string.saved), Toast.LENGTH_LONG)
+                sessionManager.setIp(ip);
+                Keyboard.hideKeyboard(view.getContext());
+                Toast.makeText(view.getContext(), getString(R.string.saved), Toast.LENGTH_LONG)
                         .show();
             }
         });
         return view;
-    }
-
-
-    private void saveSerializable(String ip){
-        try {
-            File file = getActivity().getDir("data", Context.MODE_PRIVATE);
-            File serFile = new File(file.getAbsoluteFile()+"/ip.ser");
-            FileOutputStream fileOutputStream = new FileOutputStream(serFile, false);
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
-            objectOutputStream.writeObject(ip);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }

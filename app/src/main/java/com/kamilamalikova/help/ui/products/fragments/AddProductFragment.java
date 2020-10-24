@@ -25,6 +25,9 @@ import com.kamilamalikova.help.LogInActivity;
 import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.FileStream;
 import com.kamilamalikova.help.model.LoggedInUser;
+import com.kamilamalikova.help.model.RequestFormer;
+import com.kamilamalikova.help.model.ResponseErrorHandler;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
@@ -47,40 +50,33 @@ import cz.msebera.android.httpclient.protocol.HTTP;
 
 
 public class AddProductFragment extends Fragment {
-    volatile Spinner categorySpinner;
-    volatile  Spinner unitSpinner;
-    volatile  View thisView;
+    SessionManager sessionManager;
+    View view;
+    Spinner categorySpinner;
+    Spinner unitSpinner;
     String unit;
     String category;
     Button saveBtn;
-    public AddProductFragment() {
-        // Required empty public constructor
-    }
-
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, final ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_add_product, container, false);
-        this.thisView = view;
+        view = inflater.inflate(R.layout.fragment_add_product, container, false);
+        sessionManager = new SessionManager(view.getContext());
         categorySpinner = view.findViewById(R.id.categorySpinner);
         requestData(URLs.GET_CATEGORIES.getName(), categorySpinner, "category");
 
         unitSpinner = view.findViewById(R.id.unitSpinner);
         requestData(URLs.GET_UNITS.getName(), unitSpinner, "unitName");
 
-
-
         final EditText productNameTextEdit = view.findViewById(R.id.addProductNameTextEdit);
         final EditText costTextEdit = view.findViewById(R.id.costTextNumberDecimal);
-        final EditText qtyTextEdit = view.findViewById(R.id.quantityTextNumberDecimal);
+//        final EditText qtyTextEdit = view.findViewById(R.id.quantityTextNumberDecimal);
         saveBtn = view.findViewById(R.id.addProductSaveBtn);
 
         saveBtn.setOnClickListener(new View.OnClickListener() {
@@ -94,18 +90,18 @@ public class AddProductFragment extends Fragment {
                     correct = false;
                 }
                 if (costTextEdit.getText() == null || costTextEdit.getText().toString().isEmpty()) costTextEdit.setText("0.00");
-                if (qtyTextEdit.getText() == null || qtyTextEdit.getText().toString().isEmpty()) qtyTextEdit.setText("0.00");
+                //if (qtyTextEdit.getText() == null || qtyTextEdit.getText().toString().isEmpty()) qtyTextEdit.setText("0.00");
 
                 if (correct){
                     addData(productNameTextEdit.getText().toString(),
-                            qtyTextEdit.getText().toString(),
+                            //qtyTextEdit.getText().toString(),
                             costTextEdit.getText().toString(),
                             "1",
                             unit,
                             category
                             );
                 }else {
-                    Toast.makeText(getContext(), getString(R.string.not_all_fields_are_filled), Toast.LENGTH_LONG)
+                    Toast.makeText(view.getContext(), getString(R.string.not_all_fields_are_filled), Toast.LENGTH_LONG)
                             .show();
                 }
             }
@@ -115,38 +111,18 @@ public class AddProductFragment extends Fragment {
     }
 
     private void requestData(String url, final Spinner spinner, final String type){
-
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.GET);
-        requestPackage.setUrl(url);
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
-
-        if (loggedInUser == null){
-            startIntentLogIn();
-            return;
-        }
+        RequestPackage requestPackage = RequestFormer.getRequestPackage(view.getContext(), url);
         AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
 
-        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+        client.get(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), getString(R.string.content_type), new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+"");
                 try {
                     JSONArray responseArray = new JSONArray(new String(responseBody));
                     Log.i("Category response", responseArray.toString());
-                    ItemAdapter itemAdapter = new ItemAdapter(getContext(), responseArray, type, R.layout.spin_item);
+                    ItemAdapter itemAdapter = new ItemAdapter(view.getContext(), responseArray, type, R.layout.spin_item);
                     spinner.setAdapter(itemAdapter);
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -155,55 +131,27 @@ public class AddProductFragment extends Fragment {
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
         });
     }
 
 
-    private void addData(String productName, String inStockQty, String cost, String restaurant, String unit, String category){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.POST);
-        requestPackage.setUrl("/products");
 
-        requestPackage.setParam("productName", productName);
-        requestPackage.setParam("inStockQty", inStockQty);
-        requestPackage.setParam("restaurant", restaurant);
-        requestPackage.setParam("unit", unit);
-        requestPackage.setParam("category", category);
-        requestPackage.setParam("cost", cost);
-
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
-
-        if (loggedInUser == null){
-            startIntentLogIn();
-            return;
-        }
+    private void addData(String productName, String cost, String restaurant, String unit, String category){
+        RequestPackage requestPackage = RequestFormer.getProductRequestPackage(view.getContext(), productName,  cost, restaurant, unit, category);
 
         AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
 
-        final AddProductFragment thisFragment = this;
-
-        client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
+        client.post(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+"");
                 try {
                     JSONObject responseObject = new JSONObject(new String(responseBody));
                     Log.i("Product response", responseObject.toString());
-                    Navigation.findNavController(thisView).navigate(R.id.nav_products);
+                    Navigation.findNavController(view).navigate(R.id.nav_products);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -213,23 +161,8 @@ public class AddProductFragment extends Fragment {
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
-                if (statusCode == 403){
-                    Snackbar.make(getView(), "Необходимо заново авторизоваться", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                    startIntentLogIn();
-                    return;
-                }else {
-                    Snackbar.make(getView(), "Неизвестная ошибка! "+statusCode, Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-
-                }
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
         });
-    }
-
-
-    private void startIntentLogIn(){
-        Intent startIntent = new Intent(getContext(), LogInActivity.class);
-        startActivity(startIntent);
     }
 }

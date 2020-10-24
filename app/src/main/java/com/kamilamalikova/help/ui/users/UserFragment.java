@@ -1,5 +1,6 @@
 package com.kamilamalikova.help.ui.users;
 
+import android.content.Context;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -22,7 +23,10 @@ import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.Category;
 import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.model.Product;
+import com.kamilamalikova.help.model.RequestFormer;
+import com.kamilamalikova.help.model.ResponseErrorHandler;
 import com.kamilamalikova.help.model.Role;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.model.Unit;
 import com.kamilamalikova.help.model.User;
@@ -46,7 +50,7 @@ import cz.msebera.android.httpclient.protocol.HTTP;
 
 
 public class UserFragment extends Fragment {
-
+    SessionManager sessionManager;
     User user;
     View view;
 
@@ -75,9 +79,9 @@ public class UserFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_user, container, false);
-
+        sessionManager = new SessionManager(view.getContext());
         roleSpinner = view.findViewById(R.id.userRoleSpinner);
-        adapter = new RoleAdapter(getContext());
+        adapter = new RoleAdapter(view.getContext());
         roleSpinner.setAdapter(adapter);
 
         nameEditText = view.findViewById(R.id.userNameEditText);
@@ -136,7 +140,7 @@ public class UserFragment extends Fragment {
             Role role = (Role)roleSpinner.getSelectedItem();
 
             if (username.isEmpty() || name.isEmpty() || lastname.isEmpty()){
-                Toast.makeText(getContext(), "Необходимо заполнить все поля!", Toast.LENGTH_LONG)
+                Toast.makeText(view.getContext(), "Необходимо заполнить все поля!", Toast.LENGTH_LONG)
                         .show();
                 return true;
             }
@@ -149,60 +153,39 @@ public class UserFragment extends Fragment {
         return true;
     }
 
+
     public void saveUser(String url, final User user) {
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.POST);
-        requestPackage.setUrl(url);
-        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
-        assert loggedInUser != null;
-        ByteArrayEntity entity = null;
-        if(user.getRole() == Role.NOTWORKING){
-            user.setDeleted(true);
-        }
         try {
-            JSONObject request = user.generateJsonObject();
-            Log.i("User", request.toString());
-            entity = new ByteArrayEntity(user.generateJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException | JSONException e) {
+            RequestPackage requestPackage = RequestFormer.getUserRequestPackage(view.getContext(), url, user);
+            AsyncHttpClient client = new AsyncHttpClient();
+            client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
+            client.post(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                    try {
+                        JSONObject response = new JSONObject(new String(responseBody));
+                        Log.i("Res", response.toString());
+                        User user1 = new User(response);
+                        user.setUser(user1);
+                        enable(false);
+                        fill(user1);
+                        edit.setVisible(true);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                    Log.i("Error", statusCode + " " + new String(responseBody));
+                    ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
+                    enable(false);
+                    edit.setVisible(true);
+                }
+            });
+        }catch (Exception e){
             e.printStackTrace();
         }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl());
-
-
-        AsyncHttpClient client = new AsyncHttpClient();
-
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
-
-        client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                try {
-                    JSONObject response = new JSONObject(new String(responseBody));
-                    Log.i("Res", response.toString());
-                    User user1 = new User(response);
-                    user.setUser(user1);
-                    enable(false);
-                    fill(user1);
-                    edit.setVisible(true);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-            @Override
-            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                try {
-                    Toast.makeText(getContext(), statusCode+"Ошибка обработки запроса: "+new String(responseBody), Toast.LENGTH_LONG)
-                            .show();
-                }catch (Exception ex){
-                    Toast.makeText(getContext(), "Сервер не отвечает ", Toast.LENGTH_LONG)
-                            .show();
-                }
-                enable(false);
-            }
-        });
     }
 
     private void fill(User user){

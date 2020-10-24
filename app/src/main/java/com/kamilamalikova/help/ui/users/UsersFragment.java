@@ -25,7 +25,10 @@ import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.EatingPlace;
 import com.kamilamalikova.help.model.Keyboard;
 import com.kamilamalikova.help.model.LoggedInUser;
+import com.kamilamalikova.help.model.RequestFormer;
+import com.kamilamalikova.help.model.ResponseErrorHandler;
 import com.kamilamalikova.help.model.Role;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.model.User;
 import com.kamilamalikova.help.request.RequestPackage;
@@ -51,6 +54,7 @@ import cz.msebera.android.httpclient.message.BasicHeader;
 import cz.msebera.android.httpclient.protocol.HTTP;
 
 public class UsersFragment extends Fragment {
+    SessionManager sessionManager;
     View view;
     RecyclerView usersList;
     ProgressBar progressBar;
@@ -81,9 +85,9 @@ public class UsersFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_users, container, false);
-
+        sessionManager = new SessionManager(view.getContext());
         filterByRoleSpinner = view.findViewById(R.id.filterByRoleSpinner);
-        roleAdapter = new RoleAdapter(getContext());
+        roleAdapter = new RoleAdapter(view.getContext());
         roleAdapter.add(0, Role.ALL);
 
         filterByRoleSpinner.setAdapter(roleAdapter);
@@ -94,8 +98,8 @@ public class UsersFragment extends Fragment {
 
         swipeRefreshLayout = view.findViewById(R.id.usersSwipeRefresh);
 
-        layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
-        adapter = new UsersAdapter(getContext(), view);
+        layoutManager = new LinearLayoutManager(view.getContext(), LinearLayoutManager.VERTICAL, false);
+        adapter = new UsersAdapter(view.getContext(), view);
 
         usersList.setLayoutManager(layoutManager);
         usersList.setAdapter(adapter);
@@ -167,7 +171,7 @@ public class UsersFragment extends Fragment {
             }
         });
 
-        SearchManager searchManager = (SearchManager) getContext().getSystemService(Context.SEARCH_SERVICE);
+        SearchManager searchManager = (SearchManager) view.getContext().getSystemService(Context.SEARCH_SERVICE);
         usersSearchView.setSearchableInfo(searchManager.getSearchableInfo(getActivity().getComponentName()));
         usersSearchView.setIconifiedByDefault(false);
         usersSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -180,7 +184,7 @@ public class UsersFragment extends Fragment {
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                //if (!newText.isEmpty())
+                if (!newText.isEmpty())
                     adapter.filter(newText);
                 return false;
             }
@@ -201,30 +205,13 @@ public class UsersFragment extends Fragment {
     }
 
 
+
     public void requestData(final String url, String query, Role role){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.GET);
-        requestPackage.setUrl(url);
-        if (query != null) requestPackage.setParam("query", query);
-        if (role != null) requestPackage.setParam("role", role.name());
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
-
+        RequestPackage requestPackage = RequestFormer.getUsersRequestPackage(view.getContext(), url, query, role);
         AsyncHttpClient client = new AsyncHttpClient();
-        assert loggedInUser != null;
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
 
-        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+        client.get(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+" in");
@@ -257,6 +244,7 @@ public class UsersFragment extends Fragment {
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
 
         });

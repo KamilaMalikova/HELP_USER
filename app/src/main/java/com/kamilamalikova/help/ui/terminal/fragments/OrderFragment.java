@@ -1,6 +1,8 @@
 package com.kamilamalikova.help.ui.terminal.fragments;
 
 import android.app.AlertDialog;
+import android.content.ContentProvider;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 
@@ -28,6 +30,9 @@ import com.kamilamalikova.help.model.Order;
 import com.kamilamalikova.help.model.OrderDetail;
 import com.kamilamalikova.help.model.OrderStatus;
 import com.kamilamalikova.help.model.Product;
+import com.kamilamalikova.help.model.RequestFormer;
+import com.kamilamalikova.help.model.ResponseErrorHandler;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
@@ -59,7 +64,7 @@ public class OrderFragment extends Fragment {
     ListView orderProductListView;
     View view;
     OrderAdapter adapter;
-
+    SessionManager sessionManager;
     public Button openMenuBtn;
 
     @Override
@@ -74,12 +79,14 @@ public class OrderFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        //Init
         view = inflater.inflate(R.layout.fragment_order_fragment, container, false);
         orderNumberTextView = view.findViewById(R.id.orderNumberTextView);
         orderProductListView = view.findViewById(R.id.orderProductListView);
         sumTextView = view.findViewById(R.id.sumNumberTextView);
-        adapter = new OrderAdapter(getContext(), order, this);
+        adapter = new OrderAdapter(view.getContext(), order, this);
         orderProductListView.setAdapter(adapter);
+        sessionManager = new SessionManager(view.getContext());
 
         orderNumberTextView.setText((getString(R.string.this_order) +" № "+order.getOrderId()));
         openMenuBtn = view.findViewById(R.id.openMenuBtn);
@@ -87,7 +94,11 @@ public class OrderFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 if (newOrderDetails != null && newOrderDetails.size() > 0){
-                    createOrderDetails(URLs.POST_ORDER_DETAIL.getName()+"/"+order.getOrderId(), newOrderDetails);
+                    try {
+                        createOrderDetails(URLs.POST_ORDER_DETAIL.getName()+"/"+order.getOrderId(), newOrderDetails);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                 }else {
                     Bundle bundle = new Bundle();
                     bundle.putParcelable("order", order);
@@ -107,43 +118,33 @@ public class OrderFragment extends Fragment {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.cancel){
-            closeOrder(URLs.POST_ORDER.getName(), order.getOrderId());
+            try {
+                closeOrder(URLs.POST_ORDER.getName(), order.getOrderId());
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
         }
         return super.onOptionsItemSelected(item);
     }
 
 
-    public void closeOrder(final String url, long orderId){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.POST);
-        requestPackage.setUrl(url+"/"+orderId);
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
 
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
+    public void closeOrder(final String url, long orderId) throws UnsupportedEncodingException {
+        RequestPackage requestPackage = RequestFormer.getRequestPackage(view.getContext(), url, orderId);
 
         AsyncHttpClient client = new AsyncHttpClient();
-        assert loggedInUser != null;
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
 
-        client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
+
+        client.post(view.getContext(), requestPackage.getFullUrl(), requestPackage.getBytes(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
                     JSONObject response = new JSONObject(new String(responseBody));
                     Log.i("response", response.toString());
                     order = new Order(response);
-//                    Toast.makeText(getContext(), "Заказ завершен, возьмите чек", Toast.LENGTH_LONG)
-//                            .show();
-                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(view.getContext());
 
                     builder.setMessage(R.string.move_to_terminal)
                             .setCancelable(true)
@@ -178,39 +179,19 @@ public class OrderFragment extends Fragment {
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"! "+new String(responseBody));
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
         });
     }
 
 
-    public void createOrderDetails(final String url, Set<Product> products){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.POST);
-        requestPackage.setUrl(url);
 
-        final List<Product> productsToSave = new ArrayList<>();
-        for (Product product: products) {
-            if (product.getBuyQty() != 0.0) productsToSave.add(product);
-        }
-
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getOrderDetailJSONArray(order, productsToSave).toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException | JSONException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
-
+    public void createOrderDetails(final String url, Set<Product> products) throws JSONException {
+        RequestPackage requestPackage = RequestFormer.getRequestPackage(view.getContext(), url, order, products);
         AsyncHttpClient client = new AsyncHttpClient();
-        assert loggedInUser != null;
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
 
-        client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
+        client.post(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
@@ -220,7 +201,6 @@ public class OrderFragment extends Fragment {
                     newOrderDetails = null;
                     openMenuBtn.setText(getString(R.string.menu));
                     adapter.setOrder(order);
-                    adapter.notifyDataSetChanged();
                     newOrderDetails = null;
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -228,7 +208,8 @@ public class OrderFragment extends Fragment {
             }
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                Log.i("Status", statusCode+"! "+new String(responseBody));
+                Log.i("Error", statusCode+" "+new String(responseBody));
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
         });
     }

@@ -7,6 +7,7 @@ import android.os.Bundle;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
+import android.se.omapi.Session;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,6 +24,9 @@ import com.kamilamalikova.help.model.DOCTYPE;
 import com.kamilamalikova.help.model.FileStream;
 import com.kamilamalikova.help.model.Keyboard;
 import com.kamilamalikova.help.model.LoggedInUser;
+import com.kamilamalikova.help.model.RequestFormer;
+import com.kamilamalikova.help.model.ResponseErrorHandler;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.StockDocument;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.request.RequestPackage;
@@ -53,7 +57,7 @@ public class DocumentFragment extends Fragment {
     View view;
     Spinner docTypeSpinner;
     ListView docInventoryFinalListView;
-
+    SessionManager sessionManager;
     DocTypeObject docTypeObject;
     ArrayList<ProductItemObject> productItemObjectList;
 
@@ -80,15 +84,16 @@ public class DocumentFragment extends Fragment {
         this.productItemObjectList =getArguments().getParcelableArrayList("inventories");
 
         this.view = inflater.inflate(R.layout.fragment_document, container, false);
-        AndroidThreeTen.init(getContext());
+        sessionManager = new SessionManager(view.getContext());
+        AndroidThreeTen.init(view.getContext());
 
         docTypeSpinner = view.findViewById(R.id.docTypeFinalSpinner);
-        DocTypeAdapter docTypeAdapter = new DocTypeAdapter(docTypeId, docTypeName, getContext(), R.layout.spin_item);
+        DocTypeAdapter docTypeAdapter = new DocTypeAdapter(docTypeId, docTypeName, view.getContext(), R.layout.spin_item);
         docTypeSpinner.setAdapter(docTypeAdapter);
         docTypeSpinner.setSelection(Integer.parseInt(docTypeObject.getId())-1);
 
         this.docInventoryFinalListView = view.findViewById(R.id.docInventoryFinalListView);
-        ProductItemAdapter productItemAdapter = new ProductItemAdapter(getContext(), this.productItemObjectList);
+        ProductItemAdapter productItemAdapter = new ProductItemAdapter(view.getContext(), this.productItemObjectList);
         this.docInventoryFinalListView.setAdapter(productItemAdapter);
 
         this.saveBtn = view.findViewById(R.id.saveDocBtn);
@@ -99,44 +104,32 @@ public class DocumentFragment extends Fragment {
                 String type;
                 if (((DocTypeObject)docTypeSpinner.getSelectedItem()).getId().equals("1")) type = DOCTYPE.IN.getName();
                         else type = DOCTYPE.OUT.getName();
-                saveDocument(0, type, LocalDateTime.now());
+                try {
+                    saveDocument(0, type, LocalDateTime.now());
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
             }
         });
         return this.view;
     }
 
-    private void saveDocument(int docId, String docType, LocalDateTime time){
-        final RequestPackage requestPackage = new RequestPackage();
+    public static RequestPackage getDocumentRequestPackage(Context context, int docId, String docType, LocalDateTime time){
+        RequestPackage requestPackage = new RequestPackage(context);
         requestPackage.setMethod(RequestType.POST);
         requestPackage.setUrl(URLs.POST_DOC.getName());
 
-        requestPackage.setParam("documentId", Integer.toString(docId));
+        requestPackage.setParam("documentId", docId);
         requestPackage.setParam("documentType", docType);
-        requestPackage.setParam("date", time.toString());
-
-
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
-
-        if (loggedInUser == null){
-            startIntentLogIn();
-            return;
-        }
+        requestPackage.setParam("date", time);
+        return requestPackage;
+    }
+    private void saveDocument(int docId, String docType, LocalDateTime time) throws UnsupportedEncodingException {
+        RequestPackage requestPackage = RequestFormer.getDocumentRequestPackage(view.getContext(), URLs.POST_DOC.getName(), docId, docType, time);
 
         AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
-        client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler() {
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
+        client.post(getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
@@ -170,32 +163,14 @@ public class DocumentFragment extends Fragment {
         });
     }
 
-    private void saveInventory(StockDocument stockDocument, List<ProductItemObject> productItemObjects){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.POST);
-        requestPackage.setUrl(URLs.POST_INVENTORY.getName()+"/"+stockDocument.getDocumentId());
+    private void saveInventory(StockDocument stockDocument, List<ProductItemObject> productItemObjects) throws JSONException {
+        RequestPackage requestPackage = RequestFormer.getProductItemRequestPackage(view.getContext(), URLs.POST_INVENTORY.getName(), stockDocument, productItemObjects);
 
-
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getStockInventoryJSONArray(stockDocument, productItemObjects).toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException | JSONException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
-        if (loggedInUser == null){
-            startIntentLogIn();
-            return;
-        }
         AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
-        client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler() {
+
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
+
+        client.post(getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
@@ -210,18 +185,8 @@ public class DocumentFragment extends Fragment {
             }
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                switch (statusCode){
-                    case 406:
-                    case 404:
-                        Toast.makeText(getContext(), statusCode+ "! На складе не достаточно продуктов для расходования", Toast.LENGTH_LONG)
-                                .show();
-                        break;
-                    default:
-                        Toast.makeText(getContext(), statusCode+"! "+new String(responseBody), Toast.LENGTH_LONG)
-                                .show();
-                        break;
-
-                }
+                Log.i("Error", statusCode+" "+new String(responseBody));
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
         });
     }

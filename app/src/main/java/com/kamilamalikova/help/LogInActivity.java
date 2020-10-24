@@ -12,9 +12,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.jakewharton.threetenabp.AndroidThreeTen;
 import com.kamilamalikova.help.jwt.Jwt;
 import com.kamilamalikova.help.model.LoggedInUser;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
 import com.loopj.android.http.AsyncHttpClient;
@@ -27,7 +27,9 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.ByteArrayEntity;
@@ -41,6 +43,7 @@ public class LogInActivity extends AppCompatActivity {
     EditText passwordTextEdit;
     Button logInBtn;
 
+    SessionManager sessionManager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,97 +52,111 @@ public class LogInActivity extends AppCompatActivity {
         passwordTextEdit = (EditText)findViewById(R.id.passwordTextEdit);
         logInBtn = (Button)findViewById(R.id.loginBtn);
 
+
+        sessionManager = new SessionManager(getApplicationContext());
+
         logInBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+           @Override
+           public void onClick(View v) {
+               final String username = usernameTextEdit.getText().toString().trim();
+               final String password = passwordTextEdit.getText().toString().trim();
+               if (password.equals("")){
+                    passwordTextEdit.setError("Введите пароль");
+               }
+                   AsyncHttpClient client = new AsyncHttpClient();
+                   RequestPackage requestPackage = getRequestPackage();
 
-                final RequestPackage requestPackage = new RequestPackage();
-                requestPackage.setMethod(RequestType.POST);
-                requestPackage.setUrl("/login");
-                requestPackage.setParam("username", usernameTextEdit.getText().toString());
-                requestPackage.setParam("password", passwordTextEdit.getText().toString());
+                   client.post(getApplicationContext(), requestPackage.getFullUrl(), requestPackage.getBytes(), "application/json", new AsyncHttpResponseHandler() {
+                       @Override
+                       public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                           String token = getAuthorizationToken(headers);
+                           if (token.equals("")) {
+                               Toast.makeText(getApplicationContext(), R.string.autorization_error_wrong_password, Toast.LENGTH_LONG)
+                                       .show();
+                               return;
+                           }else {
+                               //store user data in session manager
+                               sessionManager.setLogin(true);
+                               sessionManager.setUserName(username);
+                               sessionManager.setPassword(password);
+                               sessionManager.setAuthorizationToken(token);
+                               String role = getRoleFromToken(token);
+                               if(!role.equals("")) sessionManager.setRole(role);
 
-                ByteArrayEntity entity = null;
-                try {
-                    entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                }
-                entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
 
-                Log.i("SER", requestPackage.getFullUrl() + entity);
-                Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
+                               LoggedInUser loggedInUser = new LoggedInUser("", username, role, token);
 
-                AsyncHttpClient client = new AsyncHttpClient();
-                client.post(getApplicationContext(),requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler() {
-                    @Override
-                    public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                        Log.i("Success", statusCode+"");
-                        for (int i = 0; i < headers.length; i++) {
-                            if (headers[i].getName().equals(getString(R.string.authorizationToken))){
-                                try {
+                               //Redirect to navigation activity
+                               Intent intent = new Intent(getApplicationContext(), NavigationActivity.class);
+                               intent.putExtra("com.kamilamalikova.help.user", (Parcelable) loggedInUser);
+                               startActivity(intent);
+                               finish();
+                           }
 
-                                    Claims claims = Jwt.decodeJWT(headers[i].getValue());
+                       }
 
-                                    ArrayList<LinkedHashMap<String, String>> roles = (ArrayList<LinkedHashMap<String, String>>) claims.get("authorities");
+                       @Override
+                       public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                           Log.i("Failure", statusCode+"");
+                           switch (statusCode){
+                               case 403 :
+                                   Toast.makeText(getApplicationContext(), R.string.autorization_error_wrong_password, Toast.LENGTH_LONG)
+                                           .show();
+                                   break;
+                               default: Toast.makeText(getApplicationContext(), statusCode+" - "+error.getMessage(), Toast.LENGTH_LONG)
+                                       .show();
+                                   break;
+                           }
 
-                                    String role = "";
-                                    for (LinkedHashMap<String, String> sub_role: roles) {
-                                        if (sub_role.get("authority").contains("ROLE_")){
-                                            role = sub_role.get("authority");
-                                            break;
-                                        }
-                                    }
-
-                                    Log.i("Role", role);
-
-                                    LoggedInUser loggedInUser = new LoggedInUser("", claims.getSubject(), role, headers[i].getValue());
-                                    saveSerializable(loggedInUser);
-                                    Intent intent = new Intent(getApplicationContext(), NavigationActivity.class);
-                                    intent.putExtra("com.kamilamalikova.help.user", (Parcelable) loggedInUser);
-
-                                    startActivity(intent);
-                                    return;
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                    return;
-                                }
-
-                            }
-                        }
-                    }
-                    private void saveSerializable(LoggedInUser user){
-                        try {
-                            File file = getDir("data", Context.MODE_PRIVATE);
-                            File serFile = new File(file.getAbsoluteFile()+"/user.ser");
-                            FileOutputStream fileOutputStream = new FileOutputStream(serFile, false);
-                            ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
-                            objectOutputStream.writeObject(user);
-
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    @Override
-                    public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                        Log.i("Failure", statusCode+"");
-                        switch (statusCode){
-                            case 403 :
-                                Toast.makeText(getApplicationContext(), "Неверный логин или пароль", Toast.LENGTH_LONG)
-                                        .show();
-                                break;
-                            default: Toast.makeText(getApplicationContext(), statusCode+" - "+error.getMessage(), Toast.LENGTH_LONG)
-                                    .show();
-                                break;
-                        }
-
-                        error.getStackTrace();
-                    }
-                });
-            }
+                           error.getStackTrace();
+                       }
+                   });
+           }
         });
+
+        if (sessionManager.getLogin()){
+
+            //have to delete and remove
+            LoggedInUser loggedInUser = new LoggedInUser("", sessionManager.getUsername(), sessionManager.getRole(), sessionManager.getAuthorizationToken());
+
+            //Redirect to navigation activity
+            Intent intent = new Intent(getApplicationContext(), NavigationActivity.class);
+            intent.putExtra("com.kamilamalikova.help.user", (Parcelable) loggedInUser);
+            startActivity(intent);
+            finish();
+        }
+    }
+
+    public RequestPackage getRequestPackage(){
+        RequestPackage requestPackage = new RequestPackage(getApplicationContext());
+        requestPackage.setMethod(RequestType.POST);
+        requestPackage.setUrl("/login");
+        requestPackage.setParam("username", usernameTextEdit.getText().toString());
+        requestPackage.setParam("password", passwordTextEdit.getText().toString());
+
+        return requestPackage;
+    }
+
+    public String getAuthorizationToken(Header[] headers){
+        for (int i = 0; i< headers.length; i++){
+            if (headers[i].getName().equals(getString(R.string.authorizationToken))) return headers[i].getValue();
+        }
+        return "";
+    }
+
+    public String getRoleFromToken(String token){
+        Claims claims = Jwt.decodeJWT(token);
+
+        ArrayList<LinkedHashMap<String, String>> roles = (ArrayList<LinkedHashMap<String, String>>) claims.get("authorities");
+
+        String role = "";
+        for (LinkedHashMap<String, String> sub_role: roles) {
+            if (sub_role.get("authority").contains("ROLE_")){
+                role = sub_role.get("authority");
+                break;
+            }
+        }
+        return role;
     }
 
 }

@@ -21,7 +21,9 @@ import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.DOCTYPE;
 import com.kamilamalikova.help.model.FileStream;
 import com.kamilamalikova.help.model.LoggedInUser;
+import com.kamilamalikova.help.model.RequestFormer;
 import com.kamilamalikova.help.model.Role;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.StartIntent;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.request.RequestPackage;
@@ -46,7 +48,7 @@ import cz.msebera.android.httpclient.protocol.HTTP;
 
 
 public class InStockFragment extends Fragment {
-
+    SessionManager sessionManager;
     View view;
     LocalDateTime to;
     LocalDateTime from;
@@ -70,16 +72,18 @@ public class InStockFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        AndroidThreeTen.init(getContext());
-        to = LocalDateTime.now();
-        from = LocalDateTime.of(to.getYear(), to.getMonth().getValue()-1, to.getDayOfMonth(), 0, 0);
 
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_in_stock, container, false);
+        sessionManager = new SessionManager(view.getContext());
+        AndroidThreeTen.init(view.getContext());
+        to = LocalDateTime.now();
+        from = LocalDateTime.of(to.getYear(), to.getMonth().getValue()-1, to.getDayOfMonth(), 0, 0);
+
         inStockListView = view.findViewById(R.id.inStockListView);
         requestData(URLs.GET_DOCS.getName()+"/"+currentPage, DOCTYPE.IN.getName(), from, to);
 
-        docAdapter = new StockDocAdapter(getContext());
+        docAdapter = new StockDocAdapter(view.getContext());
 
         final SwipeRefreshLayout swipeRefresh = view.findViewById(R.id.inStockSwipe);
         swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -95,32 +99,12 @@ public class InStockFragment extends Fragment {
 
 
     public void requestData(final String url, String type, LocalDateTime from, LocalDateTime to){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.GET);
-        requestPackage.setUrl(url);
-
-        if (type != null) requestPackage.setParam("type", type);
-        if (from != null) requestPackage.setParam("from", from.toString());
-        if (to != null) requestPackage.setParam("to", to.toString());
-
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
+        RequestPackage requestPackage = RequestFormer.getFilterRequestPackage(view.getContext(), url, type, from, to);
 
         AsyncHttpClient client = new AsyncHttpClient();
-        assert loggedInUser != null;
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
 
-        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+        client.get(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), getString(R.string.content_type), new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+" in");

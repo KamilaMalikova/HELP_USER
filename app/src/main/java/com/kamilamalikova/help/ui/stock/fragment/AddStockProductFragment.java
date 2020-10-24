@@ -24,6 +24,9 @@ import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.Category;
 import com.kamilamalikova.help.model.FileStream;
 import com.kamilamalikova.help.model.LoggedInUser;
+import com.kamilamalikova.help.model.RequestFormer;
+import com.kamilamalikova.help.model.ResponseErrorHandler;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.StockItemBalance;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.model.Unit;
@@ -48,6 +51,8 @@ import cz.msebera.android.httpclient.protocol.HTTP;
 
 
 public class AddStockProductFragment extends Fragment {
+    SessionManager sessionManager;
+
     View view;
     Spinner categorySpinner;
     Spinner unitSpinner;
@@ -70,7 +75,7 @@ public class AddStockProductFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_add_stock_product, container, false);
-
+        sessionManager = new SessionManager(view.getContext());
         categorySpinner = view.findViewById(R.id.categoryStockSpinner);
         requestData(URLs.GET_CATEGORIES.getName(), categorySpinner, "category");
 
@@ -110,7 +115,7 @@ public class AddStockProductFragment extends Fragment {
                     addData(stockItemBalance);
 
                 }else {
-                    Toast.makeText(getContext(), getString(R.string.not_all_fields_are_filled), Toast.LENGTH_LONG)
+                    Toast.makeText(view.getContext(), getString(R.string.not_all_fields_are_filled), Toast.LENGTH_LONG)
                             .show();
                 }
             }
@@ -122,38 +127,17 @@ public class AddStockProductFragment extends Fragment {
 
 
     private void requestData(String url, final Spinner spinner, final String type){
-
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.GET);
-        requestPackage.setUrl(url);
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
-
-        if (loggedInUser == null){
-            startIntentLogIn();
-            return;
-        }
+        RequestPackage requestPackage = RequestFormer.getRequestPackage(view.getContext(), url);
         AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
-
-        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
+        client.get(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), getString(R.string.content_type), new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+"");
                 try {
                     JSONArray responseArray = new JSONArray(new String(responseBody));
                     Log.i("response", responseArray.toString());
-                    ItemAdapter itemAdapter = new ItemAdapter(getContext(), responseArray, type, R.layout.spin_item);
+                    ItemAdapter itemAdapter = new ItemAdapter(view.getContext(), responseArray, type, R.layout.spin_item);
                     spinner.setAdapter(itemAdapter);
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -162,74 +146,39 @@ public class AddStockProductFragment extends Fragment {
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
         });
     }
 
     private void addData(StockItemBalance itemBalance){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.POST);
-        requestPackage.setUrl(URLs.POST_ITEMS.getName());
-
-        ByteArrayEntity entity = null;
         try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject(itemBalance).toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException | JSONException e) {
+            RequestPackage requestPackage = RequestFormer.getStockItemRequestPackage(view.getContext(), URLs.POST_ITEMS.getName(), itemBalance);
+            AsyncHttpClient client = new AsyncHttpClient();
+            client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
+
+            client.post(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler(){
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                    Log.i("Status", statusCode+"");
+                    try {
+                        JSONObject responseObject = new JSONObject(new String(responseBody));
+                        Log.i("Stock response", responseObject.toString());
+                        Navigation.findNavController(view).navigate(R.id.nav_stock);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                    Log.i("Status", statusCode+"");
+                    ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
+                }
+            });
+        } catch (JSONException e) {
             e.printStackTrace();
         }
-
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
-
-        if (loggedInUser == null){
-            startIntentLogIn();
-            return;
-        }
-
-        AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
-
-        final AddStockProductFragment thisFragment = this;
-
-        client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                Log.i("Status", statusCode+"");
-                try {
-                    JSONObject responseObject = new JSONObject(new String(responseBody));
-                    Log.i("Stock response", responseObject.toString());
-                    Navigation.findNavController(view).navigate(R.id.nav_stock);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
-            }
-
-            @Override
-            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                Log.i("Status", statusCode+"");
-                if (statusCode == 403){
-                    Snackbar.make(getView(), "Необходимо заново авторизоваться", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                    startIntentLogIn();
-                    return;
-                }else {
-                    Snackbar.make(getView(), "Неизвестная ошибка! "+statusCode, Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-
-                }
-            }
-        });
-    }
-
-
-    private void startIntentLogIn(){
-        Intent startIntent = new Intent(getContext(), LogInActivity.class);
-        startActivity(startIntent);
     }
 }

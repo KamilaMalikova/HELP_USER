@@ -16,6 +16,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.navigation.NavigationView;
 import com.kamilamalikova.help.model.LoggedInUser;
+import com.kamilamalikova.help.model.SessionManager;
+import com.kamilamalikova.help.model.UserRole;
 
 import androidx.fragment.app.FragmentManager;
 import androidx.navigation.NavController;
@@ -32,10 +34,22 @@ public class NavigationActivity extends AppCompatActivity {
 
     private AppBarConfiguration mAppBarConfiguration;
 
+    SessionManager sessionManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_navigation);
+        sessionManager = new SessionManager(getApplicationContext());
+        String username = sessionManager.getUsername();
+        String role = sessionManager.getRole();
+
+
+        LoggedInUser loggedInUser = (LoggedInUser) getIntent().getExtras().get("com.kamilamalikova.help.user");
+        if(loggedInUser.getRole() == UserRole.STUFF){
+            setContentView(R.layout.activity_navigation_stuff);
+        }else if (loggedInUser.getRole() == UserRole.WAITER) setContentView(R.layout.activity_navigation_waiter);
+        else if (loggedInUser.getRole() == UserRole.NOTWORKING) setContentView(R.layout.activity_navigation_notworking);
+        else setContentView(R.layout.activity_navigation);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -46,9 +60,11 @@ public class NavigationActivity extends AppCompatActivity {
         TextView usernameTextView = headerView.findViewById(R.id.usernameTextView);
         TextView userRoleTextView = headerView.findViewById(R.id.userRoleTextView);
 
-        LoggedInUser loggedInUser = (LoggedInUser) getIntent().getExtras().get("com.kamilamalikova.help.user");
-        usernameTextView.setText(loggedInUser.getUsername());
-        userRoleTextView.setText(loggedInUser.getRole().name());
+        sessionManager = new SessionManager(getApplicationContext());
+
+        usernameTextView.setText(username);
+        userRoleTextView.setText(role);
+
         Menu menu = navigationView.getMenu();
         menu.findItem(R.id.logOutBtn);
         MenuItem item = menu.findItem(R.id.logOutBtn);
@@ -62,6 +78,11 @@ public class NavigationActivity extends AppCompatActivity {
                         .setPositiveButton("Да", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
+                                sessionManager.setLogin(false);
+                                sessionManager.setUserName("");
+                                sessionManager.setAuthorizationToken("");
+                                sessionManager.setRole("");
+
                                 File file = getDir("data", Context.MODE_PRIVATE);
                                 File serFile = new File(file.getAbsoluteFile() + "/user.ser");
                                 Log.i("File", serFile.getAbsolutePath());
@@ -70,6 +91,7 @@ public class NavigationActivity extends AppCompatActivity {
                                 }
                                 Intent startIntent = new Intent(getApplicationContext(), MainActivity.class);
                                 startActivity(startIntent);
+                                finish();
                             }
                         })
                         .setNegativeButton("Нет", new DialogInterface.OnClickListener() {
@@ -85,8 +107,6 @@ public class NavigationActivity extends AppCompatActivity {
             }
         });
 
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(
                  R.id.nav_settings, R.id.nav_products, R.id.nav_stock, R.id.nav_terminal, R.id.nav_in_out_stock, R.id.nav_users, R.id.nav_report, R.id.nav_order_history)
                 .setDrawerLayout(drawer)

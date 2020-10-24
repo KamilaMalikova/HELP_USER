@@ -2,6 +2,7 @@ package com.kamilamalikova.help.ui.history;
 
 import android.app.DatePickerDialog;
 import android.app.MediaRouteButton;
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
@@ -40,10 +41,14 @@ import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.EatingPlace;
 import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.model.OrderStatus;
+import com.kamilamalikova.help.model.RequestFormer;
+import com.kamilamalikova.help.model.ResponseErrorHandler;
 import com.kamilamalikova.help.model.Role;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.TableType;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.model.User;
+import com.kamilamalikova.help.model.UserRole;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
 import com.kamilamalikova.help.ui.history.adapter.OrderHistoryAdapter;
@@ -75,8 +80,10 @@ import cz.msebera.android.httpclient.protocol.HTTP;
 
 
 public class OrdersHistoryFragment extends Fragment {
-
+    SessionManager sessionManager;
+    LoggedInUser loggedInUser;
     View view;
+    View popupView;
     LayoutInflater inflater;
 
     LocalDateTime to;
@@ -103,6 +110,7 @@ public class OrdersHistoryFragment extends Fragment {
     OrderStatus orderStatus = OrderStatus.ALL;
 
     OrderStatusAdapter orderStatusAdapter;
+
     private static final int PAGE_START = 0;
     private boolean isLoading = false;
     private boolean isLastPage = false;
@@ -123,31 +131,42 @@ public class OrdersHistoryFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        AndroidThreeTen.init(getContext());
         this.inflater = inflater;
+        view = inflater.inflate(R.layout.fragment_orders_history, container, false);
+        sessionManager = new SessionManager(view.getContext());
+        loggedInUser = new LoggedInUser(sessionManager);
+        AndroidThreeTen.init(view.getContext());
         to = LocalDateTime.now();
         from = LocalDateTime.of(to.getYear(), to.getMonth().getValue()-1, to.getDayOfMonth(), 0, 0);
-        // Inflate the layout for this fragment
-        view = inflater.inflate(R.layout.fragment_orders_history, container, false);
         historyListView = view.findViewById(R.id.orderHistoryListView);
-        adapter = new OrderHistoryAdapter(getContext());
+        adapter = new OrderHistoryAdapter(view.getContext());
         progressBar = view.findViewById(R.id.orderHistoryProgressBar);
         swipeRefreshLayout = view.findViewById(R.id.orderHistorySwipeRefresh);
         historyListView.setAdapter(adapter);
 
-        orderStatusAdapter = new OrderStatusAdapter(getContext());
+        orderStatusAdapter = new OrderStatusAdapter(view.getContext());
 
-        requestData(URLs.GET_ORDERS.getName()+"/"+currentPage, null, null, from, to, 0);
+        requestData(URLs.GET_ORDERS.getName()+"/"+currentPage,
+                null,
+                (user != null) ? user.getUsername() : null, from, to, 0);
 
-        requestData(URLs.GET_USERS.getName());
 
-        layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
+        if (loggedInUser.getRole() == UserRole.ADMIN || loggedInUser.getRole() == UserRole.OWNER){
+            requestData(URLs.GET_USERS.getName());
+        }else {
+                user = new User(loggedInUser);
+        }
+
+        layoutManager = new LinearLayoutManager(view.getContext(), LinearLayoutManager.VERTICAL, false);
         historyListView.setOnScrollListener(new PaginationOnScrollListener(layoutManager) {
             @Override
             protected void loadMoreItems() {
                 isLoading = true;
                 currentPage += 1;
-                if (currentPage < TOTAL_PAGES) requestData(URLs.GET_ORDERS.getName()+"/"+currentPage, orderStatus, (user != null) ? user.getUsername() : null, from, to, 0);
+                if (currentPage < TOTAL_PAGES) requestData(URLs.GET_ORDERS.getName()+"/"+currentPage,
+                        orderStatus,
+                        (user != null) ? user.getUsername() : null,
+                        from, to, 0);
             }
 
             @Override
@@ -171,7 +190,10 @@ public class OrdersHistoryFragment extends Fragment {
                 adapter.init();
                 to = LocalDateTime.now();
                 from = LocalDateTime.of(to.getYear(), to.getMonth().getValue()-1, to.getDayOfMonth(), 0, 0);
-                requestData(URLs.GET_ORDERS.getName()+"/"+currentPage, null, null, from, to, 0);
+
+                requestData(URLs.GET_ORDERS.getName()+"/"+currentPage,
+                        null,
+                        (loggedInUser.isOwnerOrAdmin()) ? null: loggedInUser.getUsername(), from, to, 0);
                 swipeRefreshLayout.setRefreshing(false);
             }
         });
@@ -188,7 +210,7 @@ public class OrdersHistoryFragment extends Fragment {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.filter){
-            View popupView = inflater.inflate(R.layout.filter_order_history, null);
+            popupView = inflater.inflate(R.layout.filter_order_history, null);
             int width = LinearLayout.LayoutParams.MATCH_PARENT;
             int height = LinearLayout.LayoutParams.WRAP_CONTENT;
 
@@ -203,7 +225,13 @@ public class OrdersHistoryFragment extends Fragment {
             filterOrderStatusSpinner.setAdapter(orderStatusAdapter);
 
             orderWaiterNameTextView = popupView.findViewById(R.id.orderWaiterNameTextView);
-
+            if (!loggedInUser.isOwnerOrAdmin()){
+                orderWaiterNameTextView.setFocusable(false);
+                if (user == null) {
+                    user = new User(loggedInUser);
+                }
+                orderWaiterNameTextView.setText(user.getName());
+            }
             orderWaiterNameTextView.setThreshold(1);
             orderWaiterNameTextView.setAdapter(usersAdapter);
 
@@ -221,7 +249,7 @@ public class OrdersHistoryFragment extends Fragment {
                     int month = calendar.get(Calendar.MONTH);
                     int day = calendar.get(Calendar.DAY_OF_MONTH);
 
-                    DatePickerDialog dialog = new DatePickerDialog(getContext(),
+                    DatePickerDialog dialog = new DatePickerDialog(popupView.getContext(),
                             R.style.Theme_AppCompat_Light_Dialog,
                             mDateStartSetListener,
                             year, month, day);
@@ -242,7 +270,7 @@ public class OrdersHistoryFragment extends Fragment {
                     int month = calendar.get(Calendar.MONTH);
                     int day = calendar.get(Calendar.DAY_OF_MONTH);
 
-                    DatePickerDialog dialog = new DatePickerDialog(getContext(),
+                    DatePickerDialog dialog = new DatePickerDialog(popupView.getContext(),
                             R.style.Theme_AppCompat_Light_Dialog,
                             mDateEndSetListener,
                             year, month, day);
@@ -261,7 +289,7 @@ public class OrdersHistoryFragment extends Fragment {
                     month+=1;
                     from = LocalDateTime.of(year, month, dayOfMonth, LocalDateTime.now().getHour(), LocalDateTime.now().getMinute(), 0, 0);
                     if (from.compareTo(LocalDateTime.now()) > 0){
-                        Toast.makeText(getContext(), "Начальная дата не может быть больше текущей даты", Toast.LENGTH_LONG)
+                        Toast.makeText(popupView.getContext(), "Начальная дата не может быть больше текущей даты", Toast.LENGTH_LONG)
                                 .show();
                         return;
                     }
@@ -276,7 +304,7 @@ public class OrdersHistoryFragment extends Fragment {
                     month+=1;
                     to = LocalDateTime.of(year, month, dayOfMonth, LocalDateTime.now().getHour(), LocalDateTime.now().getMinute(), 0, 0);
                     if (to.compareTo(from) < 0){
-                        Toast.makeText(getContext(), "Конечная дата не может быть больше начальной", Toast.LENGTH_LONG)
+                        Toast.makeText(popupView.getContext(), "Конечная дата не может быть больше начальной", Toast.LENGTH_LONG)
                                 .show();
                         return;
                     }
@@ -303,7 +331,9 @@ public class OrdersHistoryFragment extends Fragment {
                     currentPage = PAGE_START;
                     swipeRefreshLayout.setRefreshing(false);
                     adapter.init();
-                    requestData(URLs.GET_ORDERS.getName()+"/"+currentPage, ((OrderStatus) orderStatusAdapter.getItem(filterOrderStatusSpinner.getSelectedItemPosition())), (user != null) ? user.getUsername() : null, from, to, 0);
+                    requestData(URLs.GET_ORDERS.getName()+"/"+currentPage,
+                            ((OrderStatus) orderStatusAdapter.getItem(filterOrderStatusSpinner.getSelectedItemPosition())),
+                            (user != null) ? user.getUsername() : null, from, to, 0);
                     popupWindow.dismiss();
                 }
             });
@@ -312,35 +342,14 @@ public class OrdersHistoryFragment extends Fragment {
         return super.onOptionsItemSelected(item);
     }
 
+
+
     public void requestData(final String url, OrderStatus status, String username, LocalDateTime from, LocalDateTime to, int tableId){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.GET);
-        requestPackage.setUrl(url);
-
-        if (status != null && status != OrderStatus.ALL) requestPackage.setParam("status", status.name());
-        if (username != null) requestPackage.setParam("username", username);
-        if (from != null) requestPackage.setParam("start", from.toString());
-        if (to != null) requestPackage.setParam("end", to.toString());
-        if (tableId != 0) requestPackage.setParam("tableId", tableId+"");
-
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
-
+        RequestPackage requestPackage = RequestFormer.getOrdersRequestPackage(view.getContext(), url, status, username, from, to, tableId);
         AsyncHttpClient client = new AsyncHttpClient();
-        assert loggedInUser != null;
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
 
-        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+        client.get(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+" in");
@@ -358,7 +367,6 @@ public class OrdersHistoryFragment extends Fragment {
                         responseArray = (JSONArray)responseObject.get("content");
                     }
                     Log.i("response", responseArray.toString());
-                    //adapter.init();
                     progressBar.setVisibility(View.GONE);
                     isLoading = false;
                     adapter.add(responseArray);
@@ -370,34 +378,19 @@ public class OrdersHistoryFragment extends Fragment {
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
         });
     }
 
 
     public void requestData(final String url){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.GET);
-        requestPackage.setUrl(url);
-
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
+        RequestPackage requestPackage = RequestFormer.getRequestPackage(view.getContext(), url);
 
         AsyncHttpClient client = new AsyncHttpClient();
-        assert loggedInUser != null;
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
 
-        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+        client.get(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+"");
@@ -412,7 +405,7 @@ public class OrdersHistoryFragment extends Fragment {
                             users.add(new User(object));
                         }
                     }
-                    usersAdapter = new UsersAdapter(getContext(), users);
+                    usersAdapter = new UsersAdapter(view.getContext(), users);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -420,6 +413,7 @@ public class OrdersHistoryFragment extends Fragment {
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
 
         });

@@ -12,6 +12,7 @@ import android.widget.Button;
 
 import com.kamilamalikova.help.jwt.Jwt;
 import com.kamilamalikova.help.model.LoggedInUser;
+import com.kamilamalikova.help.model.SessionManager;
 
 import org.threeten.bp.Instant;
 
@@ -26,61 +27,29 @@ import java.util.TimeZone;
 import io.jsonwebtoken.Claims;
 
 public class MainActivity extends AppCompatActivity {
+    SessionManager sessionManager;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        sessionManager = new SessionManager(getApplicationContext());
+
         setContentView(R.layout.activity_main);
 
-        try {
-            File file_ip = getDir("data", Context.MODE_PRIVATE);
-            File serFile_ip = new File(file_ip.getAbsoluteFile()+"/ip.ser");
-            Log.i("File", serFile_ip.getAbsolutePath());
-            if (!serFile_ip.exists()){
-                Intent startIntent = new Intent(getApplicationContext(), IpActivity.class);
-                startActivity(startIntent);
-            }else {
-                File file = getDir("data", Context.MODE_PRIVATE);
-                File serFile = new File(file.getAbsoluteFile() + "/user.ser");
-                Log.i("File", serFile.getAbsolutePath());
-                FileInputStream streamIn = new FileInputStream(serFile);
-                ObjectInputStream objectInputStream = new ObjectInputStream(streamIn);
-                LoggedInUser loggedInUser = (LoggedInUser) objectInputStream.readObject();
-                if (loggedInUser == null) {
-                    startIntentLogIn();
-                } else {
-                    Claims claims = Jwt.decodeJWT(loggedInUser.getAuthorizationToken());
-                    long expiration = claims.get("exp", Long.class);
-                    Instant expiration_intent = Instant.ofEpochSecond(expiration);
-                    Instant now = Instant.now();
-                    if (now.compareTo(expiration_intent) >= 0) {
-                        startIntentLogIn();
-                    } else {
-                        startIntentNavigation(loggedInUser);
-                    }
-                }
-            }
-        } catch (FileNotFoundException e) {
-            startIntentLogIn();
-            e.printStackTrace();
-        } catch (IOException e) {
-            startIntentLogIn();
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            startIntentLogIn();
-            e.printStackTrace();
+        if (sessionManager.getLogin()){
+            //have to delete and remove
+            LoggedInUser loggedInUser = new LoggedInUser("", sessionManager.getUsername(), sessionManager.getRole(), sessionManager.getAuthorizationToken());
+
+            //Redirect to navigation activity
+            Intent intent = new Intent(getApplicationContext(), NavigationActivity.class);
+            startActivity(intent);
+            finish();
+        }else {
+            Intent intent = new Intent(getApplicationContext(), LogInActivity.class);
+            startActivity(intent);
+            finish();
         }
-    }
-
-    private void startIntentLogIn(){
-        Intent startIntent = new Intent(getApplicationContext(), LogInActivity.class);
-        startActivity(startIntent);
-    }
-
-    private void startIntentNavigation(LoggedInUser loggedInUser){
-        Intent startIntent = new Intent(getApplicationContext(), NavigationActivity.class);
-        startIntent.putExtra("com.kamilamalikova.help.user", (Parcelable) loggedInUser);
-        startActivity(startIntent);
     }
 
 }

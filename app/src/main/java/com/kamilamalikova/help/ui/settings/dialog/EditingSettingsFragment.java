@@ -19,6 +19,7 @@ import com.kamilamalikova.help.LogInActivity;
 import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.FileStream;
 import com.kamilamalikova.help.model.LoggedInUser;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
 import com.loopj.android.http.AsyncHttpClient;
@@ -36,7 +37,8 @@ import cz.msebera.android.httpclient.protocol.HTTP;
 
 
 public class EditingSettingsFragment extends Fragment {
-
+    Context context;
+    SessionManager sessionManager;
     private String id;
     private String value;
     private String type;
@@ -77,10 +79,6 @@ public class EditingSettingsFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        EditText valueEditText = getView().findViewById(R.id.valueSettingTextEdit);
-        TextView idTextView = getView().findViewById(R.id.idUnitTextView);
-        TextView typeTextView = getView().findViewById(R.id.typeUnitTextView);
     }
 
 
@@ -89,6 +87,8 @@ public class EditingSettingsFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_editing_settings, container, false);
+        this.context = view.getContext();
+        sessionManager = new SessionManager(context);
         EditText valueEditText = view.findViewById(R.id.valueSettingTextEdit);
         TextView idTextView = view.findViewById(R.id.idUnitTextView);
         TextView typeTextView = view.findViewById(R.id.typeUnitTextView);
@@ -123,7 +123,7 @@ public class EditingSettingsFragment extends Fragment {
 
 
     private void updateData(String id, String updateValue){
-        final RequestPackage requestPackage = new RequestPackage();
+        final RequestPackage requestPackage = new RequestPackage(context);
         requestPackage.setMethod(RequestType.POST);
         if (this.type.equals("category")) {
             requestPackage.setUrl("/categories/category/"+id);
@@ -137,35 +137,11 @@ public class EditingSettingsFragment extends Fragment {
                 requestPackage.setParam("unit", value);
             }
         }
-
-        //requestPackage.setParam("category", value);
-
-
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
-
-        if (loggedInUser == null){
-            startIntentLogIn();
-            return;
-        }
-
+        requestPackage.getBytes();
         AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
 
-        final EditingSettingsFragment thisFragment = this;
-
-        client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
+        client.post(getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+"");

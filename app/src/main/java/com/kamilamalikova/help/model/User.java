@@ -47,7 +47,29 @@ public class User implements Parcelable {
         this.lastname = object.getString("lastname");
         setRole(object.getString("role"));
     }
+    public User(LoggedInUser loggedInUser){
+        this.id = 0;
+        this.username = loggedInUser.getUsername();
+        this.password = null;
+        this.name = loggedInUser.getDisplayName();
+        this.lastname = loggedInUser.getDisplayName();
 
+        switch (loggedInUser.getRole()){
+            case OWNER:
+                this.role = Role.OWNER;
+                break;
+            case ADMIN:
+                this.role = Role.ADMIN;
+                break;
+            case WAITER:
+                this.role = Role.WAITER;
+                break;
+            case STUFF:
+                this.role = Role.STUFF;
+            case NOTWORKING:
+                this.role = Role.NOTWORKING;
+        }
+    }
     protected User(Parcel in) {
         id = in.readInt();
         username = in.readString();

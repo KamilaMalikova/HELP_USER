@@ -22,6 +22,8 @@ import com.kamilamalikova.help.LogInActivity;
 import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.FileStream;
 import com.kamilamalikova.help.model.LoggedInUser;
+import com.kamilamalikova.help.model.RequestFormer;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
@@ -43,9 +45,9 @@ import cz.msebera.android.httpclient.protocol.HTTP;
 
 public class StockFragment extends Fragment {
 
-    volatile View view;
+    View view;
     ListView productListView;
-
+    SessionManager sessionManager;
     public StockFragment() {
         // Required empty public constructor
     }
@@ -61,14 +63,24 @@ public class StockFragment extends Fragment {
 
         view = inflater.inflate(R.layout.fragment_stock, container, false);
         productListView = view.findViewById(R.id.stockProductsListView);
-        requestData(URLs.GET_ITEMS.getName(), null, "500", "");
+        sessionManager = new SessionManager(view.getContext());
+
+        try {
+            requestData(URLs.GET_ITEMS.getName(), null, "500", "");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
 
         final SwipeRefreshLayout swipeAndRefresh = view.findViewById(R.id.stockProductsListSwipe);
 
         swipeAndRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                requestData(URLs.GET_ITEMS.getName(), null, "500", "");
+                try {
+                    requestData(URLs.GET_ITEMS.getName(), null, "500", "");
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
                 swipeAndRefresh.setRefreshing(false);
             }
         });
@@ -88,39 +100,13 @@ public class StockFragment extends Fragment {
         return view;
     }
 
-    private void requestData(final String url, String productName, String categoryId, String category){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.GET);
-        requestPackage.setUrl(url);
+    private void requestData(final String url, String productName, String categoryId, String category) throws UnsupportedEncodingException {
+        RequestPackage requestPackage = RequestFormer.requestStockProductRequestPackage(view.getContext(), url, productName, categoryId, category);
 
-        if (productName != null) requestPackage.setParam("name", productName);
-        if (!categoryId.equals("0") && !(categoryId.equals("500"))) {
-            requestPackage.setParam("id", categoryId);
-            requestPackage.setParam("category", category);
-        }
-
-
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
-
-        if (loggedInUser == null){
-            startIntentLogIn();
-            return;
-        }
         AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
 
-        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+        client.get(getContext(), requestPackage.getFullUrl(), requestPackage.getBytes(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+"");
@@ -147,7 +133,7 @@ public class StockFragment extends Fragment {
     }
 
     private void requestSpinnerData(String url, final Spinner spinner, final String type){
-        final RequestPackage requestPackage = new RequestPackage();
+        final RequestPackage requestPackage = new RequestPackage(view.getContext());
         requestPackage.setMethod(RequestType.GET);
         requestPackage.setUrl(url);
         ByteArrayEntity entity = null;

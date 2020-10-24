@@ -32,6 +32,13 @@ public class LoggedInUser implements Parcelable, Serializable{
         this.authorizationToken = authorizationToken;
     }
 
+    public LoggedInUser(SessionManager manager){
+        this.displayName = manager.getName()+" "+manager.getLastName();
+        this.username = manager.getUsername();
+        this.setRole(manager.getRole());
+        this.roleString = manager.getRole();
+        this.authorizationToken = manager.getAuthorizationToken();
+    }
     protected LoggedInUser(Parcel in) {
         displayName = in.readString();
         username = in.readString();
@@ -127,5 +134,9 @@ public class LoggedInUser implements Parcelable, Serializable{
             return null;
         }
         else return loggedInUser;
+    }
+
+    public boolean isOwnerOrAdmin(){
+        return (this.getRole() == UserRole.ADMIN || this.getRole() == UserRole.OWNER);
     }
 }

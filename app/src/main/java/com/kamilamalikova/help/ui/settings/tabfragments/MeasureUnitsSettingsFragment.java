@@ -27,6 +27,9 @@ import com.kamilamalikova.help.LogInActivity;
 import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.FileStream;
 import com.kamilamalikova.help.model.LoggedInUser;
+import com.kamilamalikova.help.model.RequestFormer;
+import com.kamilamalikova.help.model.ResponseErrorHandler;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.SettingsObject;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
@@ -46,13 +49,11 @@ import cz.msebera.android.httpclient.message.BasicHeader;
 import cz.msebera.android.httpclient.protocol.HTTP;
 
 public class MeasureUnitsSettingsFragment extends Fragment {
-
+    View view;
+    SessionManager sessionManager;
     ListView unitsListView;
-    volatile EditText text;
-    volatile SwipeRefreshLayout swipeRefreshLayout;
-    public MeasureUnitsSettingsFragment() {
-        // Required empty public constructor
-    }
+    EditText text;
+    SwipeRefreshLayout swipeRefreshLayout;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -64,8 +65,8 @@ public class MeasureUnitsSettingsFragment extends Fragment {
     public View onCreateView(final LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         final LayoutInflater inflater1 = inflater;
-        View view = inflater.inflate(R.layout.fragment_measure_units_settings, container, false);
-
+        view = inflater.inflate(R.layout.fragment_measure_units_settings, container, false);
+        sessionManager = new SessionManager(view.getContext());
         unitsListView = view.findViewById(R.id.unitsListView);
         requestData();
 
@@ -176,37 +177,16 @@ public class MeasureUnitsSettingsFragment extends Fragment {
 
 
     private void addData(String value){
-        final RequestPackage requestPackage = new RequestPackage();
+        RequestPackage requestPackage = RequestFormer.getRequestPackageWithKey(view.getContext(), "/units", "unit", value);
         requestPackage.setMethod(RequestType.POST);
         requestPackage.setUrl("/units");
         requestPackage.setParam("unit", value);
-
-
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
-
-        if (loggedInUser == null){
-            startIntentLogIn();
-            return;
-        }
-
         AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
 
         final MeasureUnitsSettingsFragment thisFragment = this;
 
-        client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
+        client.post(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+"");
@@ -223,16 +203,7 @@ public class MeasureUnitsSettingsFragment extends Fragment {
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
-                if (statusCode == 403){
-                    Snackbar.make(getView(), "Необходимо заново авторизоваться", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                    startIntentLogIn();
-                    return;
-                }else {
-                    Snackbar.make(getView(), "Неизвестная ошибка! "+statusCode, Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-
-                }
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
         });
     }
@@ -240,35 +211,10 @@ public class MeasureUnitsSettingsFragment extends Fragment {
 
 
     private void requestData(){
-
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.GET);
-        requestPackage.setUrl("/units");
-
-
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
-
-        if (loggedInUser == null){
-            startIntentLogIn();
-            return;
-        }
-
+        RequestPackage requestPackage = RequestFormer.getRequestPackage(view.getContext(), "/units");
         AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
-
-        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
+        client.get(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler(){
 
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
@@ -276,59 +222,44 @@ public class MeasureUnitsSettingsFragment extends Fragment {
                 try {
                     JSONArray responseArray = new JSONArray(new String(responseBody));
                     Log.i("Units response", responseArray.toString());
-                    ItemAdapter itemAdapter = new ItemAdapter(getContext(), responseArray, "unitName");
+                    ItemAdapter itemAdapter = new ItemAdapter(view.getContext(), responseArray, "unitName");
                     unitsListView.setAdapter(itemAdapter);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
 
             }
-
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
         });
     }
 
-
     private void updateData(String id, String updateValue, String type){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.POST);
+        String url = "";
+        String key = "";
+        String value = null;
         if (type.equals("category")) {
-            requestPackage.setUrl("/categories/category/"+id);
+            url = "/categories/category/"+id;
             if (updateValue != null){
-                requestPackage.setParam("category", updateValue);
+                key = "category";
+                value = updateValue;
             }
         }
         else {
-            requestPackage.setUrl("/units/unit/"+id);
+            url = "/units/unit/"+id;
             if (updateValue != null){
-                requestPackage.setParam("unit", updateValue);
+                key = "unit";
+                value =updateValue;
             }
         }
 
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
-
-        if (loggedInUser == null){
-            startIntentLogIn();
-            return;
-        }
+        RequestPackage requestPackage = RequestFormer.getSettingsRequestPackage(view.getContext(), url, key, value);
         final MeasureUnitsSettingsFragment thisFragment = this;
         AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
 
         if (updateValue == null){
             client.post(requestPackage.getFullUrl(), new AsyncHttpResponseHandler(){
@@ -348,19 +279,10 @@ public class MeasureUnitsSettingsFragment extends Fragment {
                 @Override
                 public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                     Log.i("Status", statusCode+"");
-                    if (statusCode == 403){
-                        Snackbar.make(getView(), "Необходимо заново авторизоваться", Snackbar.LENGTH_LONG)
-                                .setAction("Action", null).show();
-                        startIntentLogIn();
-                        return;
-                    }else {
-                        Snackbar.make(getView(), "Неизвестная ошибка! "+statusCode, Snackbar.LENGTH_LONG)
-                                .setAction("Action", null).show();
-
-                    }
+                    ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
                 }
             });
-        }else client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
+        }else client.post(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+"");
@@ -373,26 +295,11 @@ public class MeasureUnitsSettingsFragment extends Fragment {
                 }
 
             }
-
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
-                if (statusCode == 403){
-                    Snackbar.make(getView(), "Необходимо заново авторизоваться", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                    startIntentLogIn();
-                    return;
-                }else {
-                    Snackbar.make(getView(), "Неизвестная ошибка! "+statusCode, Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-
-                }
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
         });
-    }
-
-    private void startIntentLogIn(){
-        Intent startIntent = new Intent(getContext(), LogInActivity.class);
-        startActivity(startIntent);
     }
 }

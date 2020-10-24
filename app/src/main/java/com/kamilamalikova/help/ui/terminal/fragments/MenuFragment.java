@@ -31,6 +31,9 @@ import com.kamilamalikova.help.model.EatingPlace;
 import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.model.Order;
 import com.kamilamalikova.help.model.Product;
+import com.kamilamalikova.help.model.RequestFormer;
+import com.kamilamalikova.help.model.ResponseErrorHandler;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
@@ -57,6 +60,10 @@ import cz.msebera.android.httpclient.message.BasicHeader;
 import cz.msebera.android.httpclient.protocol.HTTP;
 
 public class MenuFragment extends Fragment {
+
+    SessionManager sessionManager;
+    LoggedInUser loggedInUser;
+
     Order order;
     EatingPlace eatingPlace;
     View view;
@@ -64,6 +71,7 @@ public class MenuFragment extends Fragment {
     SwipeRefreshLayout menuSwipeRefresh;
     SearchView searchMenuView;
     MenuAdapter adapter;
+    TextView orderNumTextView;
     public Button orderBtn;
     public Set<Product> orderedProducts = new LinkedHashSet<>();
     public MenuFragment thisFragment = this;
@@ -82,73 +90,93 @@ public class MenuFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        try {
+            //Init parameters
+            view = inflater.inflate(R.layout.fragment_menu, container, false);
+            sessionManager = new SessionManager(view.getContext());
+            loggedInUser = new LoggedInUser(sessionManager);
+            menuListView = view.findViewById(R.id.menuListView);
+            adapter = new MenuAdapter(view.getContext(), thisFragment);
+            orderBtn = view.findViewById(R.id.orderBtn);
+            searchMenuView = view.findViewById(R.id.searchMenuView);
+            menuSwipeRefresh = view.findViewById(R.id.menuSwipeRefresh);
+            orderNumTextView = view.findViewById(R.id.orderNumTextView);
+            SearchManager searchManager = (SearchManager) view.getContext().getSystemService(Context.SEARCH_SERVICE);
+            //Set adapter on Menu
+            menuListView.setAdapter(adapter);
+            // Show order number
+            if (order != null) orderNumTextView.setText((getString(R.string.this_order)+" № "+order.getOrderId()));
+            else orderNumTextView.setText(getString(R.string.this_order));
 
-        view = inflater.inflate(R.layout.fragment_menu, container, false);
-        menuListView = view.findViewById(R.id.menuListView);
-        menuListView.setAdapter(adapter);
-        orderBtn = view.findViewById(R.id.orderBtn);
-        searchMenuView = view.findViewById(R.id.searchMenuView);
-
-        TextView orderNumTextView = view.findViewById(R.id.orderNumTextView);
-
-        if (order != null) orderNumTextView.setText((getString(R.string.this_order)+" № "+order.getOrderId()));
-        else orderNumTextView.setText(getString(R.string.this_order));
-
-        menuSwipeRefresh = view.findViewById(R.id.menuSwipeRefresh);
-        menuSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                requestData(URLs.GET_MENU_ORDER.getName());
-                menuSwipeRefresh.setRefreshing(false);
-            }
-        });
-
-        orderBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (orderedProducts.size() == 0) {
-                    Toast.makeText(getContext(), "Необходимо заказать!", Toast.LENGTH_LONG)
-                            .show();
-                    return;
+            // Refreshing menu
+            menuSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+                @Override
+                public void onRefresh() {
+                    requestData(URLs.GET_MENU_ORDER.getName());
+                    menuSwipeRefresh.setRefreshing(false);
                 }
-                if (order == null){
-                    createOrder(URLs.POST_ORDERS.getName(), eatingPlace);
-                }else {
-                    navigate(order);
+            });
+            // Order selected products
+            orderBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    //1. Check if chosen
+                    if (orderedProducts.size() == 0) {
+                        Toast.makeText(view.getContext(), "Необходимо заказать!", Toast.LENGTH_LONG)
+                                .show();
+                        return;
+                    }
+                    //2. Create order if was not
+                    if (order == null){
+                        try {
+                            createOrder(URLs.POST_ORDERS.getName(), eatingPlace);
+                        } catch (UnsupportedEncodingException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    //3. Navigate to approve fragment
+                    else {
+                        navigate(order);
+                    }
                 }
-            }
-        });
+            });
 
-        SearchManager searchManager = (SearchManager) getContext().getSystemService(Context.SEARCH_SERVICE);
-        searchMenuView.setSearchableInfo(searchManager.getSearchableInfo(getActivity().getComponentName()));
-        searchMenuView.setIconifiedByDefault(false);
-        searchMenuView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-                adapter.filter(query);
-                expandAll();
-                return false;
-            }
+            // Config search in menu
+            searchMenuView.setSearchableInfo(searchManager.getSearchableInfo(getActivity().getComponentName()));
+            searchMenuView.setIconifiedByDefault(false);
+            searchMenuView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                @Override
+                public boolean onQueryTextSubmit(String query) {
+                    adapter.filter(query);
+                    expandAll();
+                    return false;
+                }
 
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                adapter.filter(newText);
-                expandAll();
-                return false;
-            }
-        });
-        searchMenuView.setOnCloseListener(new SearchView.OnCloseListener() {
-            @Override
-            public boolean onClose() {
-                adapter.filter("");
-                expandAll();
-                return false;
-            }
-        });
-        requestData(URLs.GET_MENU_ORDER.getName());
+                @Override
+                public boolean onQueryTextChange(String newText) {
+                    adapter.filter(newText);
+                    expandAll();
+                    return false;
+                }
+            });
+            // Close search view
+            searchMenuView.setOnCloseListener(new SearchView.OnCloseListener() {
+                @Override
+                public boolean onClose() {
+                    adapter.filter("");
+                    expandAll();
+                    return false;
+                }
+            });
+            // First request
+            requestData(URLs.GET_MENU_ORDER.getName());
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         return view;
     }
-
+    //Close order and free table
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
         inflater.inflate(R.menu.cancel_menu, menu);
@@ -158,14 +186,18 @@ public class MenuFragment extends Fragment {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.cancel){
-            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            AlertDialog.Builder builder = new AlertDialog.Builder(view.getContext());
             builder.setMessage(R.string.cancel_order)
                     .setCancelable(true)
                     .setPositiveButton("Да", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             if (order == null){
-                                closeOrder(URLs.POST_TABLE.getName()+"/"+eatingPlace.getId());
+                                try {
+                                    closeOrder(URLs.POST_TABLE.getName()+"/"+eatingPlace.getId());
+                                } catch (UnsupportedEncodingException e) {
+                                    e.printStackTrace();
+                                }
                             }
                             else {
                                 getActivity().onBackPressed();
@@ -194,37 +226,18 @@ public class MenuFragment extends Fragment {
         }
     }
 
-    public void requestData(final String url){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.GET);
-        requestPackage.setUrl(url);
-
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
+    public void requestData(String url){
+        RequestPackage requestPackage = RequestFormer.getRequestPackage(view.getContext(), url);
 
         AsyncHttpClient client = new AsyncHttpClient();
-        assert loggedInUser != null;
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
-
-        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
+        client.get(view.getContext(), requestPackage.getFullUrl(), requestPackage.getBytes(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
                     JSONObject response = new JSONObject(new String(responseBody));
                     Log.i("response", response.toString());
-                    adapter = new MenuAdapter(getContext(), response, thisFragment);
-                    menuListView.setAdapter(adapter);
-                    adapter.notifyDataSetChanged();
+                    adapter.add(response);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -232,34 +245,19 @@ public class MenuFragment extends Fragment {
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
         });
     }
 
-    public void createOrder(final String url, EatingPlace eatingPlace){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.POST);
-        requestPackage.setUrl(url);
-        requestPackage.setParam("tableId", eatingPlace.getId()+"");
-        requestPackage.setParam("username", eatingPlace.getWaiterUsername());
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
+    public void createOrder(String url, EatingPlace eatingPlace) throws UnsupportedEncodingException {
+        RequestPackage requestPackage = RequestFormer.getRequestPackage(view.getContext(), url, eatingPlace);
 
         AsyncHttpClient client = new AsyncHttpClient();
         assert loggedInUser != null;
         client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
 
-        client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
+        client.post(view.getContext(), requestPackage.getFullUrl(), requestPackage.getBytes(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
@@ -274,34 +272,19 @@ public class MenuFragment extends Fragment {
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"! "+new String(responseBody));
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
         });
     }
 
-
-    public void closeOrder(String url ){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.POST);
-        requestPackage.setUrl(url);
-        requestPackage.setParam("reserved", "0");
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
+    public void closeOrder(String url ) throws UnsupportedEncodingException {
+        RequestPackage requestPackage = RequestFormer.getRequestPackage(view.getContext(), url, false);
 
         AsyncHttpClient client = new AsyncHttpClient();
         assert loggedInUser != null;
         client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
 
-        client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
+        client.post(view.getContext(), requestPackage.getFullUrl(), requestPackage.getBytes(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
@@ -315,12 +298,11 @@ public class MenuFragment extends Fragment {
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"! "+new String(responseBody));
-                Toast.makeText(getContext(), statusCode+"!"+new String(responseBody), Toast.LENGTH_LONG)
-                        .show();
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
         });
     }
-
+    // Navigate to order approve fragment with order bundle
     private void navigate(Order order){
         Bundle bundle = new Bundle();
         bundle.putParcelableArrayList("orderedProducts", new ArrayList<>(orderedProducts));

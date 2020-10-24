@@ -26,8 +26,12 @@ import android.widget.Toast;
 import com.kamilamalikova.help.LogInActivity;
 import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.FileStream;
+import com.kamilamalikova.help.model.Keyboard;
 import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.model.Product;
+import com.kamilamalikova.help.model.RequestFormer;
+import com.kamilamalikova.help.model.ResponseErrorHandler;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
@@ -55,13 +59,13 @@ import cz.msebera.android.httpclient.protocol.HTTP;
 
 public class AddDocFragment extends Fragment {
 
-    ListView stockProductListView;
-    CheckBox isChosenCheckBox;
-    TextView stockDocProductNameTextView;
-    EditText stockDocQtyTextView;
-    TextView stockDocIdTextView;
+    SessionManager sessionManager;
 
-    volatile ArrayList<ProductItemObject> productList;
+    View view;
+    ListView stockProductListView;
+    Spinner docTypeSpinner;
+    DocTypeAdapter docTypeAdapter;
+    ArrayList<ProductItemObject> productList;
 
     public AddDocFragment() {
         // Required empty public constructor
@@ -79,11 +83,11 @@ public class AddDocFragment extends Fragment {
          String docTypeId[] = new String[]{"1", "2"};
          String docTypeName[] = new String[]{getString(R.string.in), getString(R.string.out)};
 
-
         // Inflate the layout for this fragment
-        final View view = inflater.inflate(R.layout.fragment_add_doc, container, false);
-        final Spinner docTypeSpinner = view.findViewById(R.id.docTypeSpinner);
-        DocTypeAdapter docTypeAdapter = new DocTypeAdapter(docTypeId, docTypeName, getContext(), R.layout.spin_item);
+        view = inflater.inflate(R.layout.fragment_add_doc, container, false);
+        sessionManager = new SessionManager(view.getContext());
+        docTypeSpinner = view.findViewById(R.id.docTypeSpinner);
+        docTypeAdapter = new DocTypeAdapter(docTypeId, docTypeName, view.getContext(), R.layout.spin_item);
         docTypeSpinner.setAdapter(docTypeAdapter);
 
         stockProductListView = view.findViewById(R.id.docInventoryListView);
@@ -104,14 +108,14 @@ public class AddDocFragment extends Fragment {
                        Bundle bundle = new Bundle();
                        bundle.putParcelable ("doctype", (DocTypeObject)docTypeSpinner.getSelectedItem());
                        bundle.putParcelableArrayList("inventories",  productList);
-                       hideKeyboard(getContext());
+                       Keyboard.hideKeyboard(view.getContext());
                        Navigation.findNavController(view).navigate(R.id.nav_in_out_stock_doc, bundle);
                    }else {
-                       Toast.makeText(getContext(), "Необходимо добавить как минимум один продукт", Toast.LENGTH_LONG)
+                       Toast.makeText(view.getContext(), "Необходимо добавить как минимум один продукт", Toast.LENGTH_LONG)
                                .show();
                    }
                }else {
-                   Toast.makeText(getContext(), "Необходимо добавить как минимум один продукт", Toast.LENGTH_LONG)
+                   Toast.makeText(view.getContext(), "Необходимо добавить как минимум один продукт", Toast.LENGTH_LONG)
                            .show();
                }
             }
@@ -119,40 +123,12 @@ public class AddDocFragment extends Fragment {
         return view;
     }
 
-
     private void requestData(final String url, String productName, String categoryId, String category){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.GET);
-        requestPackage.setUrl(url);
-
-        if (productName != null) requestPackage.setParam("name", productName);
-        if (!categoryId.equals("0") && !(categoryId.equals("500"))) {
-            requestPackage.setParam("id", categoryId);
-            requestPackage.setParam("category", category);
-        }
-
-
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
-
-        if (loggedInUser == null){
-            startIntentLogIn();
-            return;
-        }
+        RequestPackage requestPackage = RequestFormer.getProductRequestPackage(view.getContext(), url, productName, categoryId, category);
         AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
 
-        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+        client.get(view.getContext(), requestPackage.getFullUrl(), requestPackage.getBytes(), getString(R.string.content_type), new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+"");
@@ -165,7 +141,7 @@ public class AddDocFragment extends Fragment {
                         responseArray = (JSONArray)responseObject.get("content");
                     }
                     Log.i("response", responseArray.toString());
-                    ProductItemAdapter itemAdapter = new ProductItemAdapter(getContext(), responseArray);
+                    ProductItemAdapter itemAdapter = new ProductItemAdapter(view.getContext(), responseArray);
                     stockProductListView.setAdapter(itemAdapter);
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -174,27 +150,8 @@ public class AddDocFragment extends Fragment {
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
         });
-    }
-
-    private void startIntentLogIn(){
-        Intent startIntent = new Intent(getContext(), LogInActivity.class);
-        startActivity(startIntent);
-    }
-
-
-    public static void hideKeyboard( Context context ) {
-
-        try {
-            InputMethodManager inputManager = ( InputMethodManager ) context.getSystemService( Context.INPUT_METHOD_SERVICE );
-
-            View view = ( (Activity) context ).getCurrentFocus();
-            if ( view != null ) {
-                inputManager.hideSoftInputFromWindow( view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS );
-            }
-        } catch ( Exception e ) {
-            e.printStackTrace();
-        }
     }
 }

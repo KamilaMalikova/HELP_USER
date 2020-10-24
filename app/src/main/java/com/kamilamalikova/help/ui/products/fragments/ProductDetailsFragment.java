@@ -17,6 +17,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -27,6 +28,9 @@ import com.kamilamalikova.help.model.Category;
 import com.kamilamalikova.help.model.FileStream;
 import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.model.Product;
+import com.kamilamalikova.help.model.RequestFormer;
+import com.kamilamalikova.help.model.ResponseErrorHandler;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.model.Unit;
 import com.kamilamalikova.help.request.RequestPackage;
@@ -55,17 +59,17 @@ import cz.msebera.android.httpclient.protocol.HTTP;
 
 
 public class ProductDetailsFragment extends Fragment {
+    SessionManager sessionManager;
 
+    View view;
     private String id;
-    volatile EditText productNameEditText;
-    volatile Spinner categorySpinner;
+    EditText productNameEditText;
+    Spinner categorySpinner;
     Spinner unitSpinner;
     SwitchCompat activeSwitch;
     SwitchCompat restaurantSwitch;
     EditText costEditText;
-    EditText qtyEditText;
-    volatile int threads = 0;
-
+    //EditText qtyEditText;
     MenuItem editDone;
     MenuItem edit;
 
@@ -79,9 +83,16 @@ public class ProductDetailsFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        View view = inflater.inflate(R.layout.fragment_product_details, container, false);
+        view = inflater.inflate(R.layout.fragment_product_details, container, false);
+        sessionManager = new SessionManager(view.getContext());
         categorySpinner = view.findViewById(R.id.detailCategorySpinner);
         unitSpinner = view.findViewById(R.id.detailUnitSpinner);
+        productNameEditText = view.findViewById(R.id.detailProductNameTextEdit);
+        activeSwitch = view.findViewById(R.id.detailActiveSwitchCompat);
+        restaurantSwitch = view.findViewById(R.id.detailRestaurantSwitchCompat);
+        costEditText = view.findViewById(R.id.detailCostTextNumberDecimal);
+        //qtyEditText = view.findViewById(R.id.detailQuantityTextNumberDecimal);
+
         requestSpinnerData(URLs.GET_CATEGORIES.getName(), categorySpinner, "category");
         requestSpinnerData(URLs.GET_UNITS.getName(), unitSpinner, "unitName");
 
@@ -89,11 +100,7 @@ public class ProductDetailsFragment extends Fragment {
         this.id = getArguments().getString("productId");
         Log.i("ID", this.id);
 
-        productNameEditText = view.findViewById(R.id.detailProductNameTextEdit);
-        activeSwitch = view.findViewById(R.id.detailActiveSwitchCompat);
-        restaurantSwitch = view.findViewById(R.id.detailRestaurantSwitchCompat);
-        costEditText = view.findViewById(R.id.detailCostTextNumberDecimal);
-        qtyEditText = view.findViewById(R.id.detailQuantityTextNumberDecimal);
+
         enable(false);
         try {
             requestData(URLs.GET_PRODUCT.getName()+"/"+this.id);
@@ -121,11 +128,10 @@ public class ProductDetailsFragment extends Fragment {
             editDone.setVisible(true);
         } else if (item.getItemId() == R.id.edit_done_menu){
             item.setVisible(false);
-            ItemObject categoryItemObject = ((ItemObject)((ItemAdapter)categorySpinner.getAdapter()).getItem(categorySpinner.getSelectedItemPosition()));
             Product product = new Product(
                     Long.parseLong(this.id),
                     this.productNameEditText.getText().toString(),
-                    Double.parseDouble(this.qtyEditText.getText().toString()),
+                    0.0,
                     activeSwitch.isChecked(),
                     restaurantSwitch.isChecked(),
                     new Unit(Integer.parseInt(((ItemObject)((ItemAdapter)unitSpinner.getAdapter()).getItem(unitSpinner.getSelectedItemPosition())).getId()),
@@ -148,7 +154,7 @@ public class ProductDetailsFragment extends Fragment {
     private void enable(boolean enabled){
         productNameEditText.setEnabled(enabled);
         costEditText.setEnabled(enabled);
-        qtyEditText.setEnabled(enabled);
+        //qtyEditText.setEnabled(enabled);
         activeSwitch.setEnabled(enabled);
         restaurantSwitch.setEnabled(enabled);
         unitSpinner.setEnabled(enabled);
@@ -156,42 +162,12 @@ public class ProductDetailsFragment extends Fragment {
     }
 
     private void saveData(Product product){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.POST);
-        requestPackage.setUrl(URLs.POST_PRODUCT_UPDATE.getName()+"/"+product.getId());
-
-        requestPackage.setParam("productName", product.getProductName());
-        requestPackage.setParam("restaurant", product.isRestaurant() ? "1": "0");
-        requestPackage.setParam("inStockQty", Double.toString(product.getInStockQty()));
-        requestPackage.setParam("unit", Integer.toString(product.getUnit().getId()));
-        requestPackage.setParam("category", Integer.toString(product.getCategory().getId()));
-        requestPackage.setParam("active", product.isActiveStatus() ? "1": "0");
-        requestPackage.setParam("cost", Double.toString(product.getCost()));
-
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
-        try {
-            assert loggedInUser != null;
-        }catch (AssertionError error){
-            startIntentLogIn();
-            return;
-        }
+        RequestPackage requestPackage = RequestFormer.getProductRequestPackage(view.getContext(), URLs.POST_PRODUCT_UPDATE.getName(), product);
 
         AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
 
-        client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
+        client.post(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+"");
@@ -209,48 +185,19 @@ public class ProductDetailsFragment extends Fragment {
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
-                if (statusCode == 403){
-                    Snackbar.make(getView(), "Необходимо заново авторизоваться", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                    startIntentLogIn();
-                    return;
-                }else {
-                    Snackbar.make(getView(), "Неизвестная ошибка! "+statusCode, Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-
-                }
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
         });
     }
 
+
     private void requestData(String url) throws InterruptedException {
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.GET);
-        requestPackage.setUrl(url);
+        RequestPackage requestPackage = RequestFormer.getRequestPackage(view.getContext(), url);
 
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
-
-        if (loggedInUser == null){
-            startIntentLogIn();
-            return;
-        }
-        final AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
         client.getThreadPool().awaitTermination(250, TimeUnit.MILLISECONDS);
-        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
-            @SuppressLint("SetTextI18n")
+        client.get(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), getString(R.string.content_type), new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+"");
@@ -262,8 +209,8 @@ public class ProductDetailsFragment extends Fragment {
                     productNameEditText.setText(product.getProductName());
                     categorySpinner.setSelection(product.getCategory().getId()-1);
                     unitSpinner.setSelection(product.getUnit().getId()-1);
-                    costEditText.setText(Double.toString(product.getCost()));
-                    qtyEditText.setText(Double.toString(product.getInStockQty()));
+                    costEditText.setText((product.getCost()+""));
+                    //qtyEditText.setText((product.getInStockQty()+""));
                     activeSwitch.setChecked(product.isActiveStatus());
                     restaurantSwitch.setChecked(product.isRestaurant());
 
@@ -279,36 +226,17 @@ public class ProductDetailsFragment extends Fragment {
     }
 
     private void requestSpinnerData(String url, final Spinner spinner, final String type){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.GET);
-        requestPackage.setUrl(url);
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
-
-        if (loggedInUser == null){
-            startIntentLogIn();
-            return;
-        }
-        final AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
-        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+        RequestPackage requestPackage = RequestFormer.getRequestPackage(view.getContext(), url);
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
+        client.get(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), getString(R.string.content_type), new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+"");
                 try {
                     JSONArray responseArray = new JSONArray(new String(responseBody));
                     Log.i("response", responseArray.toString());
-                    ItemAdapter itemAdapter = new ItemAdapter(getContext(), responseArray, type, R.layout.spin_item);
+                    ItemAdapter itemAdapter = new ItemAdapter(view.getContext(), responseArray, type, R.layout.spin_item);
                     spinner.setAdapter(itemAdapter);
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -321,8 +249,4 @@ public class ProductDetailsFragment extends Fragment {
         });
     }
 
-    private void startIntentLogIn(){
-        Intent startIntent = new Intent(getContext(), LogInActivity.class);
-        startActivity(startIntent);
-    }
 }

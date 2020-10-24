@@ -1,6 +1,7 @@
 package com.kamilamalikova.help.ui.report;
 
 import android.app.DatePickerDialog;
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
@@ -32,6 +33,9 @@ import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.DOCTYPE;
 import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.model.OrderReport;
+import com.kamilamalikova.help.model.RequestFormer;
+import com.kamilamalikova.help.model.ResponseErrorHandler;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
@@ -54,6 +58,7 @@ import cz.msebera.android.httpclient.protocol.HTTP;
 
 
 public class OrderReportFragment extends Fragment {
+    SessionManager sessionManager;
     LayoutInflater layoutInflater;
 
     View view;
@@ -78,6 +83,7 @@ public class OrderReportFragment extends Fragment {
     TextView tipNumberTextView;
     TextView allSumNumberTextView;
 
+    View popupView;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         setHasOptionsMenu(true);
@@ -87,9 +93,10 @@ public class OrderReportFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        AndroidThreeTen.init(getContext());
         this.layoutInflater = inflater;
         view = inflater.inflate(R.layout.fragment_order_report, container, false);
+        sessionManager = new SessionManager(view.getContext());
+        AndroidThreeTen.init(view.getContext());
 
         orderReportListView = view.findViewById(R.id.orderReportListView);
         reportSwipeRefresh = view.findViewById(R.id.reportSwipeRefresh);
@@ -123,7 +130,7 @@ public class OrderReportFragment extends Fragment {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.filter){
-            View popupView = layoutInflater.inflate(R.layout.fragment_date_filter, null);
+            popupView = layoutInflater.inflate(R.layout.fragment_date_filter, null);
             int width = LinearLayout.LayoutParams.MATCH_PARENT;
             int height = LinearLayout.LayoutParams.WRAP_CONTENT;
 
@@ -152,7 +159,7 @@ public class OrderReportFragment extends Fragment {
                     int month = calendar.get(Calendar.MONTH);
                     int day = calendar.get(Calendar.DAY_OF_MONTH);
 
-                    DatePickerDialog dialog = new DatePickerDialog(getContext(),
+                    DatePickerDialog dialog = new DatePickerDialog(popupView.getContext(),
                             R.style.Theme_AppCompat_Light_Dialog,
                             mDateStartSetListener,
                             year, month, day);
@@ -173,7 +180,7 @@ public class OrderReportFragment extends Fragment {
                     int month = calendar.get(Calendar.MONTH);
                     int day = calendar.get(Calendar.DAY_OF_MONTH);
 
-                    DatePickerDialog dialog = new DatePickerDialog(getContext(),
+                    DatePickerDialog dialog = new DatePickerDialog(popupView.getContext(),
                             R.style.Theme_AppCompat_Light_Dialog,
                             mDateEndSetListener,
                             year, month, day);
@@ -192,7 +199,7 @@ public class OrderReportFragment extends Fragment {
                     month+=1;
                     start = LocalDateTime.of(year, month, dayOfMonth, LocalDateTime.now().getHour(), LocalDateTime.now().getMinute(), 0, 0);
                     if (start.compareTo(LocalDateTime.now()) > 0){
-                        Toast.makeText(getContext(), "Начальная дата не может быть больше текущей даты", Toast.LENGTH_LONG)
+                        Toast.makeText(popupView.getContext(), "Начальная дата не может быть больше текущей даты", Toast.LENGTH_LONG)
                                 .show();
                         return;
                     }
@@ -207,7 +214,7 @@ public class OrderReportFragment extends Fragment {
                     month+=1;
                     end = LocalDateTime.of(year, month, dayOfMonth, LocalDateTime.now().getHour(), LocalDateTime.now().getMinute(), 0, 0);
                     if (end.compareTo(start) < 0){
-                        Toast.makeText(getContext(), "Конечная дата не может быть больше начальной", Toast.LENGTH_LONG)
+                        Toast.makeText(popupView.getContext(), "Конечная дата не может быть больше начальной", Toast.LENGTH_LONG)
                                 .show();
                         return;
                     }
@@ -229,38 +236,18 @@ public class OrderReportFragment extends Fragment {
     }
 
 
+
     public void requestData(final String url, LocalDateTime from, LocalDateTime to){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.GET);
-        requestPackage.setUrl(url);
-        if (from != null) requestPackage.setParam("from", from.toString());
-        if (to != null) requestPackage.setParam("to", to.toString());
-
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
-
+        RequestPackage requestPackage = RequestFormer.getFilterRequestPackage(view.getContext(), url, from, to);
         AsyncHttpClient client = new AsyncHttpClient();
-        assert loggedInUser != null;
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
-
-        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
+        client.get(getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), getString(R.string.content_type), new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+" in");
                 try {
                     JSONObject response = new JSONObject(new String(responseBody));
                     report = new OrderReport(response);
-
                     adapter = new OrderReportAdapter(getContext(), report.getOrderDetails());
                     orderReportListView.setAdapter(adapter);
                     adapter.notifyDataSetChanged();
@@ -274,6 +261,7 @@ public class OrderReportFragment extends Fragment {
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
         });
     }

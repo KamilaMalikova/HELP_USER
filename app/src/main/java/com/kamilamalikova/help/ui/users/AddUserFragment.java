@@ -20,7 +20,10 @@ import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.model.Order;
 import com.kamilamalikova.help.model.Product;
+import com.kamilamalikova.help.model.RequestFormer;
+import com.kamilamalikova.help.model.ResponseErrorHandler;
 import com.kamilamalikova.help.model.Role;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.model.User;
 import com.kamilamalikova.help.request.RequestPackage;
@@ -46,6 +49,7 @@ import cz.msebera.android.httpclient.protocol.HTTP;
 
 
 public class AddUserFragment extends Fragment {
+    SessionManager sessionManager;
     View view;
     Spinner roleSpinner;
     RoleAdapter adapter;
@@ -66,8 +70,9 @@ public class AddUserFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_add_user, container, false);
+        sessionManager = new SessionManager(view.getContext());
         roleSpinner = view.findViewById(R.id.roleSpinner);
-        adapter = new RoleAdapter(getContext());
+        adapter = new RoleAdapter(view.getContext());
         roleSpinner.setAdapter(adapter);
 
         nameEditText = view.findViewById(R.id.nameEditText);
@@ -104,7 +109,7 @@ public class AddUserFragment extends Fragment {
                 String username = usernameEditText.getText().toString();
                 String password = passwordEditText.getText().toString();
                 if (!repeatPasswordEditText.getText().toString().equals(password)){
-                    Toast.makeText(getContext(), "Пароль не совпадает!", Toast.LENGTH_LONG)
+                    Toast.makeText(view.getContext(), "Пароль не совпадает!", Toast.LENGTH_LONG)
                             .show();
                     return;
                 }
@@ -114,7 +119,7 @@ public class AddUserFragment extends Fragment {
                 Role role = (Role)roleSpinner.getSelectedItem();
 
                 if (username.isEmpty() || password.isEmpty() || name.isEmpty() || lastname.isEmpty()){
-                    Toast.makeText(getContext(), "Необходимо заполнить все поля!", Toast.LENGTH_LONG)
+                    Toast.makeText(view.getContext(), "Необходимо заполнить все поля!", Toast.LENGTH_LONG)
                             .show();
                     return;
                 }
@@ -127,44 +132,34 @@ public class AddUserFragment extends Fragment {
     }
 
     public void addUser(String url, User user){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.POST);
-        requestPackage.setUrl(url);
-        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
-        assert loggedInUser != null;
-        user.setCreator(loggedInUser.getUsername());
-        ByteArrayEntity entity = null;
         try {
-            entity = new ByteArrayEntity(user.generateJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException | JSONException e) {
+            RequestPackage requestPackage = RequestFormer.getUserRequestPackage(view.getContext(), url, user);
+
+            AsyncHttpClient client = new AsyncHttpClient();
+
+            client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
+
+            client.post(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                    try {
+                        JSONObject response = new JSONObject(new String(responseBody));
+                        Log.i("response", response.toString());
+                        Navigation.findNavController(view).navigate(R.id.nav_users);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                    Log.i("Status", statusCode + "! " + new String(responseBody));
+                    ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
+                }
+            });
+        }catch (Exception e){
             e.printStackTrace();
         }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-
-        AsyncHttpClient client = new AsyncHttpClient();
-
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
-
-        client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                try {
-                    JSONObject response = new JSONObject(new String(responseBody));
-                    Log.i("response", response.toString());
-                    Navigation.findNavController(view).navigate(R.id.nav_users);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-            @Override
-            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                Log.i("Status", statusCode+"! "+new String(responseBody));
-            }
-        });
     }
 
 }

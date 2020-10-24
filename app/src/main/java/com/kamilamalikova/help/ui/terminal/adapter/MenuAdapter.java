@@ -35,7 +35,7 @@ public class MenuAdapter extends BaseExpandableListAdapter {
     HashMap<String, List<Product>> productListHashMap;
     HashMap<String, List<Product>> productListHashMapOriginal;
 
-    public MenuAdapter(Context context, JSONObject products, MenuFragment menuFragment) throws JSONException {
+    public MenuAdapter(Context context, MenuFragment menuFragment) throws JSONException {
         this.context = context;
         this.menuFragment = menuFragment;
         this.mInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -43,7 +43,9 @@ public class MenuAdapter extends BaseExpandableListAdapter {
         this.categories = new ArrayList<>();
         this.productListHashMapOriginal = new HashMap<>();
         this.categoriesOriginal = new ArrayList<>();
+    }
 
+    public void add(JSONObject products) throws JSONException {
         for (Iterator<String> it = products.keys(); it.hasNext(); ) {
             String key = it.next();
             categories.add(key);
@@ -58,7 +60,7 @@ public class MenuAdapter extends BaseExpandableListAdapter {
             this.productListHashMap.put(key, products1);
             this.productListHashMapOriginal.put(key, products2);
         }
-        
+        notifyDataSetChanged();
     }
 
     @Override

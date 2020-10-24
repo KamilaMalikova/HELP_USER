@@ -37,6 +37,7 @@ public class OrderAdapter extends BaseAdapter {
 
     public void setOrder(Order order) {
         this.order = order;
+        notifyDataSetChanged();
     }
 
     @Override

@@ -26,6 +26,7 @@ import com.kamilamalikova.help.model.EatingPlace;
 import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.model.Order;
 import com.kamilamalikova.help.model.OrderStatus;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
@@ -48,7 +49,7 @@ import cz.msebera.android.httpclient.protocol.HTTP;
 public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     Activity activity;
-
+    SessionManager sessionManager;
     List<EatingPlace> eatingPlaceList;
     LoggedInUser user;
 
@@ -79,7 +80,8 @@ public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
         this.eatingPlaceList = new ArrayList<>();
         this.context = context;
         this.activity = activity;
-        user = LoggedInUser.isLoggedIn(context, activity);
+        sessionManager = new SessionManager(context);
+        user = new LoggedInUser(sessionManager);
     }
 
     public List<EatingPlace> getEatingPlaceList() {
@@ -256,30 +258,17 @@ public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
 
     private void reserveTable(String url, EatingPlace eatingPlace, final View view){
-        final RequestPackage requestPackage = new RequestPackage();
+        final RequestPackage requestPackage = new RequestPackage(view.getContext());
         requestPackage.setMethod(RequestType.POST);
         requestPackage.setUrl(url+"/"+eatingPlace.getId());
-
-        LoggedInUser loggedInUser = user;
-        assert loggedInUser != null;
-        eatingPlace.setWaiterUsername(loggedInUser.getUsername());
+        eatingPlace.setWaiterUsername(sessionManager.getUsername());
         requestPackage.setParam("reserved", "1");
-        requestPackage.setParam("username", loggedInUser.getUsername());
-
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
+        requestPackage.setParam("username", sessionManager.getUsername());
+        requestPackage.getBytes();
 
         AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(context.getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
-        client.post(context, requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler() {
+        client.addHeader(context.getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
+        client.post(context, requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
@@ -300,28 +289,15 @@ public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
 
     private void requestOrder(String url, final EatingPlace eatingPlace, final View view){
-        final RequestPackage requestPackage = new RequestPackage();
+        RequestPackage requestPackage = new RequestPackage(view.getContext());
         requestPackage.setMethod(RequestType.GET);
         requestPackage.setUrl(url);
         requestPackage.setParam("tableId", eatingPlace.getId()+"");
         requestPackage.setParam("status", OrderStatus.CREATED.name());
-        LoggedInUser loggedInUser = user;
-        assert loggedInUser != null;
-
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
+        requestPackage.getBytes();
         AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(context.getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
-        client.get(context, requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler() {
+        client.addHeader(context.getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
+        client.get(context, requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {
@@ -355,9 +331,14 @@ public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     }
 
     private void navigate(View itemView, EatingPlace eatingPlace, Order order){
-        Bundle bundle = new Bundle();
-        bundle.putParcelable("table", eatingPlace);
-        bundle.putParcelable("order", order);
-        Navigation.findNavController(itemView).navigate(R.id.nav_order, bundle);
+        try {
+            Bundle bundle = new Bundle();
+            bundle.putParcelable("table", eatingPlace);
+            bundle.putParcelable("order", order);
+            Navigation.findNavController(itemView).navigate(R.id.nav_order, bundle);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
     }
 }

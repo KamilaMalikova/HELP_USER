@@ -18,6 +18,7 @@ import com.kamilamalikova.help.model.EatingPlace;
 import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.model.Order;
 import com.kamilamalikova.help.model.Product;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
@@ -41,11 +42,14 @@ import cz.msebera.android.httpclient.protocol.HTTP;
 
 
 public class ApproveOrderFragment extends Fragment {
-    public ArrayList<Product> orderedProducts;
+    SessionManager sessionManager;
+
+    ArrayList<Product> orderedProducts;
     ListView orderProductListView;
-    public Order order;
+    Order order;
     View view;
     TextView orderNumberTextView;
+    OrderDetailAdapter adapter;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -58,52 +62,53 @@ public class ApproveOrderFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
+        //Init objects
         view = inflater.inflate(R.layout.fragment_approve_order, container, false);
+        sessionManager = new SessionManager(view.getContext());
         orderProductListView = view.findViewById(R.id.orderProductListView);
-        OrderDetailAdapter adapter = new OrderDetailAdapter(orderedProducts, getContext(), this);
-        orderProductListView.setAdapter(adapter);
+        adapter = new OrderDetailAdapter(orderedProducts, view.getContext(), this);
         orderNumberTextView = view.findViewById(R.id.orderNumberTextView);
-
-        orderNumberTextView.setText((getString(R.string.order)+" №"+order.getOrderId()));
         Button approveOrderBtn = view.findViewById(R.id.approveOrderBtn);
+
+        //Set order number
+        orderNumberTextView.setText((getString(R.string.order)+" №"+order.getOrderId()));
+
+        orderProductListView.setAdapter(adapter);
+
         approveOrderBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                createOrderDetails(URLs.POST_ORDER_DETAIL.getName()+"/"+order.getOrderId(), order, orderedProducts);
+                try {
+                    createOrderDetails(URLs.POST_ORDER_DETAIL.getName()+"/"+order.getOrderId(), order, orderedProducts);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             }
         });
         return view;
     }
 
-    public void createOrderDetails(final String url, Order order, List<Product> products){
-        final RequestPackage requestPackage = new RequestPackage();
+    public RequestPackage getRequestPackage(String url, Order order, List<Product> products) throws JSONException {
+        RequestPackage requestPackage = new RequestPackage(view.getContext());
         requestPackage.setMethod(RequestType.POST);
         requestPackage.setUrl(url);
-
         List<Product> productsToSave = new ArrayList<>();
         for (Product product: products) {
             if (product.getBuyQty() > 0.0) productsToSave.add(product);
         }
+        Log.i("Products", requestPackage.getOrderDetailJSONArray(order, productsToSave).toString());
+        requestPackage.setEntity(requestPackage.getOrderDetailJSONArray(order, productsToSave).toString());
+        return requestPackage;
+    }
 
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getOrderDetailJSONArray(order, productsToSave).toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException | JSONException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
+    public void createOrderDetails(final String url, Order order, List<Product> products) throws JSONException {
+        RequestPackage requestPackage = getRequestPackage(url, order, products);
 
         AsyncHttpClient client = new AsyncHttpClient();
-        assert loggedInUser != null;
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
 
-        client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
+
+        client.post(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 try {

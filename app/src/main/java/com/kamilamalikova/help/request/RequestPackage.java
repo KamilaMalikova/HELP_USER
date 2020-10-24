@@ -3,6 +3,7 @@ package com.kamilamalikova.help.request;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
 import android.util.Log;
 
@@ -12,6 +13,7 @@ import com.kamilamalikova.help.MainActivity;
 import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.model.Order;
 import com.kamilamalikova.help.model.Product;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.StockDocument;
 import com.kamilamalikova.help.model.StockItemBalance;
 import com.kamilamalikova.help.ui.stock.adapter.ProductItemObject;
@@ -20,6 +22,7 @@ import com.loopj.android.http.RequestParams;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.threeten.bp.LocalDateTime;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,6 +34,10 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import cz.msebera.android.httpclient.entity.ByteArrayEntity;
+import cz.msebera.android.httpclient.message.BasicHeader;
+import cz.msebera.android.httpclient.protocol.HTTP;
 
 public class RequestPackage {
     private final String prefix = "http://";
@@ -47,19 +54,11 @@ public class RequestPackage {
 
     private String authorizationToken = "";
 
-    public RequestPackage() {
-        try {
-            @SuppressLint("SdCardPath") File file = new File("/data/user/0/com.kamilamalikova.help/app_data/");
-            File serFile = new File(file.getAbsoluteFile()+"/ip.ser");
-            Log.i("File", serFile.getAbsolutePath());
-            FileInputStream streamIn = new FileInputStream(serFile);
-            ObjectInputStream objectInputStream = new ObjectInputStream(streamIn);
-            String server = (String)objectInputStream.readObject();
-            this.server = server;
-        }catch (Exception ex){
-            ex.printStackTrace();
-        }
+    private ByteArrayEntity entity;
 
+    public RequestPackage(Context context) {
+        SessionManager sessionManager = new SessionManager(context);
+        this.server = sessionManager.getIp();
     }
 
     public String getUrl() {
@@ -97,6 +96,19 @@ public class RequestPackage {
 
     public void setParam(String key, String value) {
         this.params.put(key, value);
+    }
+
+    public void setParam(String key, boolean value) {
+        this.params.put(key, (value) ? "1":"0");
+    }
+
+    public void setParam(String key, int docId) {
+        setParam(key, Integer.toString(docId));
+    }
+
+
+    public void setParam(String key, LocalDateTime time) {
+        setParam(key, time.toString());
     }
 
     public JSONObject getJsonObject(){
@@ -200,4 +212,34 @@ public class RequestPackage {
     public RequestParams getRequestParams(){
         return new RequestParams(params);
     }
+
+
+    public ByteArrayEntity getBytes (){
+        try {
+            ByteArrayEntity entity = new ByteArrayEntity(getJsonObject().toString().getBytes("UTF-8"));
+            entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+            Log.i("SER", getFullUrl() + entity);
+            Log.i("SER", getFullUrl() + getJsonObject());
+            this.entity = entity;
+            return entity;
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public void setEntity(String value){
+        try {
+            entity = new ByteArrayEntity(value.getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+    }
+
+    public ByteArrayEntity getEntity(){
+        return entity;
+    }
+
+
 }

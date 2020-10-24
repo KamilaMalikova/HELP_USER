@@ -90,14 +90,13 @@ public class ProductItemAdapter extends BaseAdapter {
         TextView indexTextView = v.findViewById(R.id.productIdItemTextView);
         TextView itemNameTextView = v.findViewById(R.id.productNameItemTextView);
         TextView itemQtyTextView = v.findViewById(R.id.productQtyItemTextView);
+        itemQtyTextView.setVisibility(View.INVISIBLE);
         TextView itemUnitTextView = v.findViewById(R.id.qtyName);
         String item = this.items[position];
         String index = this.index[position];
-        String qty = this.qty[position];
         String unit = this.unit[position];
         indexTextView.setText(index);
         itemNameTextView.setText(item);
-        itemQtyTextView.setText(qty);
         itemUnitTextView.setText(unit);
         return v;
     }

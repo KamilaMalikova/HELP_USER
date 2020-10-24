@@ -15,6 +15,9 @@ import android.widget.Toast;
 import com.google.android.material.snackbar.Snackbar;
 import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.LoggedInUser;
+import com.kamilamalikova.help.model.RequestFormer;
+import com.kamilamalikova.help.model.ResponseErrorHandler;
+import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.Tip;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.request.RequestPackage;
@@ -33,6 +36,7 @@ import cz.msebera.android.httpclient.protocol.HTTP;
 
 
 public class TipFragment extends Fragment {
+    SessionManager sessionManager;
     View view;
     Tip tip;
     EditText tipEditText;
@@ -47,6 +51,7 @@ public class TipFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         view = inflater.inflate(R.layout.fragment_tip, container, false);
+        sessionManager = new SessionManager(view.getContext());
         tipEditText = view.findViewById(R.id.tipEditText);
         saveTipButton = view.findViewById(R.id.saveTipBtn);
 
@@ -55,7 +60,7 @@ public class TipFragment extends Fragment {
             public void onClick(View v) {
                 double tip_val = Double.parseDouble(tipEditText.getText().toString());
                 if (tip_val < 0.0) {
-                    Toast.makeText(getContext(), "Чаевые не могут быть отрицательными", Toast.LENGTH_LONG)
+                    Toast.makeText(view.getContext(), "Чаевые не могут быть отрицательными", Toast.LENGTH_LONG)
                             .show();
                     return;
                 }
@@ -68,29 +73,10 @@ public class TipFragment extends Fragment {
     }
 
     private void getTip(String url){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.GET);
-        requestPackage.setUrl(url);
-
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
-        assert loggedInUser != null;
-
+        RequestPackage requestPackage = RequestFormer.getRequestPackage(view.getContext(), url);
         AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
-
-        client.get(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
+        client.get(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+"");
@@ -104,74 +90,38 @@ public class TipFragment extends Fragment {
                 }
 
             }
-
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
-                if (statusCode == 403){
-                    Snackbar.make(getView(), "Необходимо заново авторизоваться", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                    return;
-                }else {
-                    Snackbar.make(getView(), "Неизвестная ошибка! "+statusCode, Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                }
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
         });
     }
 
     private void saveTip(String url, double tip_val){
-        final RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod(RequestType.POST);
-        requestPackage.setUrl(url);
-        requestPackage.setParam("tip", tip_val+"");
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
-
-
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = LoggedInUser.isLoggedIn(getContext(), getActivity());
-        assert loggedInUser != null;
-
+        RequestPackage requestPackage = RequestFormer.getRequestPackageWithKey(view.getContext(), url, "tip", tip_val+"");
         AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
 
-        client.post(getContext(), requestPackage.getFullUrl(), entity, "application/json", new AsyncHttpResponseHandler(){
+        client.post(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+"");
                 try {
                     JSONObject object = new JSONObject(new String(responseBody));
                     Log.i("Response",object.toString());
-                    Toast.makeText(getContext(), "Операция выполнена успешно!", Toast.LENGTH_LONG)
+                    Toast.makeText(view.getContext(), "Операция выполнена успешно!", Toast.LENGTH_LONG)
                             .show();
                     tip = new Tip(object);
                     tipEditText.setText((tip.getTip()+""));
-
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-
             }
-
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
-                if (statusCode == 403){
-                    Snackbar.make(getView(), "Необходимо заново авторизоваться", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                    return;
-                }else {
-                    Snackbar.make(getView(), "Неизвестная ошибка! "+statusCode, Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                }
+                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
             }
         });
     }
