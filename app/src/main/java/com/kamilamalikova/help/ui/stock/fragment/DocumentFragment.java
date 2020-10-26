@@ -81,7 +81,7 @@ public class DocumentFragment extends Fragment {
         String docTypeName[] = new String[]{getString(R.string.in), getString(R.string.out)};
 
         this.docTypeObject = getArguments().getParcelable("doctype");
-        this.productItemObjectList =getArguments().getParcelableArrayList("inventories");
+        this.productItemObjectList = getArguments().getParcelableArrayList("inventories");
 
         this.view = inflater.inflate(R.layout.fragment_document, container, false);
         sessionManager = new SessionManager(view.getContext());
@@ -93,7 +93,7 @@ public class DocumentFragment extends Fragment {
         docTypeSpinner.setSelection(Integer.parseInt(docTypeObject.getId())-1);
 
         this.docInventoryFinalListView = view.findViewById(R.id.docInventoryFinalListView);
-        ProductItemAdapter productItemAdapter = new ProductItemAdapter(view.getContext(), this.productItemObjectList);
+        ProductItemAdapter productItemAdapter = new ProductItemAdapter(view.getContext(), this.productItemObjectList, docTypeSpinner);
         this.docInventoryFinalListView.setAdapter(productItemAdapter);
 
         this.saveBtn = view.findViewById(R.id.saveDocBtn);
@@ -150,11 +150,11 @@ public class DocumentFragment extends Fragment {
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 switch (statusCode){
                     case 406:
-                        Toast.makeText(getContext(), statusCode+ "! На складе не достаточно продуктов для расходования", Toast.LENGTH_LONG)
+                        Toast.makeText(getContext(), statusCode+ "! На складе не достаточно продуктов для расходования", Toast.LENGTH_SHORT)
                                 .show();
                         break;
                     default:
-                        Toast.makeText(getContext(), statusCode+"! Ошибка", Toast.LENGTH_LONG)
+                        Toast.makeText(getContext(), statusCode+"! Ошибка", Toast.LENGTH_SHORT)
                             .show();
                         break;
                 }

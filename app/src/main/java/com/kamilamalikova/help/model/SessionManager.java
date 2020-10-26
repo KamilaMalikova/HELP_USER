@@ -77,7 +77,7 @@ public class SessionManager {
         commit("KEY_IP", value);
     }
     public String getIp(){
-        return sharedPreferences.getString("KEY_IP", "192.168.25.107");
+        return sharedPreferences.getString("KEY_IP", "");
     }
     private void commit(String key, String value){
         editor.putString(key, value);

@@ -75,14 +75,22 @@ public class TablesSettingsFragment extends Fragment {
         addTablesBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (Integer.parseInt(tablesCountEditText.getText().toString()) <= 0)
-                {
-                    Toast.makeText(view.getContext(), "Минимальное число столов 1", Toast.LENGTH_LONG)
+                try {
+                    int tables = (tablesCountEditText.getText().toString().isEmpty()) ? 0 : Integer.parseInt(tablesCountEditText.getText().toString());
+                    if (tables <= 0)
+                    {
+                        Toast.makeText(view.getContext(), "Минимальное число столов 1", Toast.LENGTH_SHORT)
+                                .show();
+                        return;
+                    }
+                    tableEdit(URLs.POST_TABLES.getName(), Integer.parseInt(tablesCountEditText.getText().toString()));
+                    Keyboard.hideKeyboard(view.getContext());
+                }catch (Exception e){
+                    Toast.makeText(view.getContext(), "Минимальное число столов 1", Toast.LENGTH_SHORT)
                             .show();
-                    return;
+                    e.printStackTrace();
                 }
-                tableEdit(URLs.POST_TABLES.getName(), Integer.parseInt(tablesCountEditText.getText().toString()));
-                Keyboard.hideKeyboard(view.getContext());
+
             }
         });
 
@@ -91,7 +99,7 @@ public class TablesSettingsFragment extends Fragment {
             public void onClick(View v) {
                 if (Integer.parseInt(tablesCountEditText.getText().toString()) <= 0)
                 {
-                    Toast.makeText(view.getContext(), "Минимальное число столов 1", Toast.LENGTH_LONG)
+                    Toast.makeText(view.getContext(), "Минимальное число столов 1", Toast.LENGTH_SHORT)
                             .show();
                     return;
                 }
@@ -116,13 +124,13 @@ public class TablesSettingsFragment extends Fragment {
                 try {
                     JSONObject object = new JSONObject(new String(responseBody));
                     Log.i("Response",object.toString());
-                    Toast.makeText(view.getContext(), "Операция выполнена успешно!", Toast.LENGTH_LONG)
+                    Toast.makeText(view.getContext(), "Операция выполнена успешно!", Toast.LENGTH_SHORT)
                             .show();
                     tablesCount.setText((getString(R.string.tables)+": "+object.getInt("table_id")));
                 } catch (Exception e) {
                     Integer counter = Integer.valueOf(new String(responseBody));
                     Log.i("Response",counter.toString());
-                    Toast.makeText(view.getContext(), "Операция выполнена успешно!", Toast.LENGTH_LONG)
+                    Toast.makeText(view.getContext(), "Операция выполнена успешно!", Toast.LENGTH_SHORT)
                             .show();
                     tablesCount.setText((getString(R.string.tables)+": "+counter.toString()));
                     e.printStackTrace();

@@ -25,7 +25,11 @@ public enum  URLs {
     GET_USERS("/users"),
     GET_TIP("/tip"),
     POST_TIP("/tip"),
-    GET_REPORT("/orders/report");
+    GET_REPORT("/orders/report"),
+    POST_DELETE_ITEM("/items//delete"),
+    GET_ITEM("/items/item"),
+    POST_ITEM("/items/item"),
+    GET_USER("/users/user");
 
     String name;
 

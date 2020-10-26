@@ -109,7 +109,7 @@ public class AddUserFragment extends Fragment {
                 String username = usernameEditText.getText().toString();
                 String password = passwordEditText.getText().toString();
                 if (!repeatPasswordEditText.getText().toString().equals(password)){
-                    Toast.makeText(view.getContext(), "Пароль не совпадает!", Toast.LENGTH_LONG)
+                    Toast.makeText(view.getContext(), "Пароль не совпадает!", Toast.LENGTH_SHORT)
                             .show();
                     return;
                 }
@@ -119,7 +119,7 @@ public class AddUserFragment extends Fragment {
                 Role role = (Role)roleSpinner.getSelectedItem();
 
                 if (username.isEmpty() || password.isEmpty() || name.isEmpty() || lastname.isEmpty()){
-                    Toast.makeText(view.getContext(), "Необходимо заполнить все поля!", Toast.LENGTH_LONG)
+                    Toast.makeText(view.getContext(), "Необходимо заполнить все поля!", Toast.LENGTH_SHORT)
                             .show();
                     return;
                 }

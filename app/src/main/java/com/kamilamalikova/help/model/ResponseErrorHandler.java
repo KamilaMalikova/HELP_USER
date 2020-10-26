@@ -34,7 +34,7 @@ public class ResponseErrorHandler {
     }
 
     public static void showErrorMessage(Context context, String message){
-        Toast.makeText(context, message, Toast.LENGTH_LONG)
+        Toast.makeText(context, message, Toast.LENGTH_SHORT)
                 .show();
     }
 }

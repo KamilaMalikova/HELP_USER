@@ -14,6 +14,7 @@ import android.widget.Toast;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.kamilamalikova.help.R;
+import com.kamilamalikova.help.model.Keyboard;
 import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.model.RequestFormer;
 import com.kamilamalikova.help.model.ResponseErrorHandler;
@@ -58,9 +59,9 @@ public class TipFragment extends Fragment {
         saveTipButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                double tip_val = Double.parseDouble(tipEditText.getText().toString());
+                double tip_val = (tipEditText.getText().toString().isEmpty()) ? tip.getTip():Double.parseDouble(tipEditText.getText().toString());
                 if (tip_val < 0.0) {
-                    Toast.makeText(view.getContext(), "Чаевые не могут быть отрицательными", Toast.LENGTH_LONG)
+                    Toast.makeText(view.getContext(), "Чаевые не могут быть отрицательными", Toast.LENGTH_SHORT)
                             .show();
                     return;
                 }
@@ -110,10 +111,11 @@ public class TipFragment extends Fragment {
                 try {
                     JSONObject object = new JSONObject(new String(responseBody));
                     Log.i("Response",object.toString());
-                    Toast.makeText(view.getContext(), "Операция выполнена успешно!", Toast.LENGTH_LONG)
+                    Toast.makeText(view.getContext(), "Операция выполнена успешно!", Toast.LENGTH_SHORT)
                             .show();
                     tip = new Tip(object);
                     tipEditText.setText((tip.getTip()+""));
+                    Keyboard.hideKeyboard(view.getContext());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

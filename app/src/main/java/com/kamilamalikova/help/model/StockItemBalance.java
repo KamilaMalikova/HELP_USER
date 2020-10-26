@@ -37,7 +37,7 @@ public class StockItemBalance implements Parcelable {
         this.unit = new Unit(object.getJSONObject("unit"));
         this.category = new Category(object.getJSONObject("category"));
         this.inStockQty = object.getDouble("inStockQty");
-        this.productId = object.getLong("inStockQty");
+        this.productId = object.getLong("productId");
         this.restaurant = object.getBoolean("restaurant");
     }
 
@@ -133,5 +133,26 @@ public class StockItemBalance implements Parcelable {
         dest.writeDouble(this.inStockQty);
         dest.writeLong(this.productId);
         dest.writeBoolean(this.restaurant);
+    }
+
+
+    public JSONObject generateJSON() throws JSONException {
+        String json = "{\n" +
+                "  \"id\": "+id+",\n" +
+                "  \"name\": \""+name+"\",\n" +
+                "  \"unit\": {\n" +
+                "    \"id\": "+unit.getId()+",\n" +
+                "    \"unitName\": \""+unit.getUnitName()+"\"\n" +
+                "  },\n" +
+                "  \"category\": {\n" +
+                "    \"id\": "+category.getId()+",\n" +
+                "    \"category\": \""+category.getCategory()+"\"\n" +
+                "  },\n" +
+                "  \"inStockQty\": "+inStockQty+",\n" +
+                "  \"productId\": "+productId+",\n" +
+                "  \"restaurant\": "+restaurant+"\n" +
+                "}";
+
+        return new JSONObject(json);
     }
 }

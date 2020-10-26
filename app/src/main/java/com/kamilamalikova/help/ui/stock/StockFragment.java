@@ -11,10 +11,20 @@ import androidx.navigation.Navigation;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.PopupWindow;
 import android.widget.Spinner;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -28,7 +38,9 @@ import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
 import com.kamilamalikova.help.ui.products.adapter.ItemAdapter;
+import com.kamilamalikova.help.ui.products.adapter.ItemObject;
 import com.kamilamalikova.help.ui.products.adapter.ProductItemAdapter;
+import com.kamilamalikova.help.ui.stock.adapter.StockItemAdapter;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
@@ -48,6 +60,11 @@ public class StockFragment extends Fragment {
     View view;
     ListView productListView;
     SessionManager sessionManager;
+
+    LayoutInflater layoutInflater;
+    SwipeRefreshLayout swipeAndRefresh;
+    String productName;
+    Spinner categorySpinner;
     public StockFragment() {
         // Required empty public constructor
     }
@@ -60,27 +77,33 @@ public class StockFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
+        layoutInflater = inflater;
         view = inflater.inflate(R.layout.fragment_stock, container, false);
         productListView = view.findViewById(R.id.stockProductsListView);
         sessionManager = new SessionManager(view.getContext());
+        categorySpinner = view.findViewById(R.id.categorySpinner);
+        requestSpinnerData(URLs.GET_CATEGORIES.getName(), categorySpinner, "category");
+        //requestData(URLs.GET_ITEMS.getName(), null, "500", "");
 
-        try {
-            requestData(URLs.GET_ITEMS.getName(), null, "500", "");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+        categorySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String category = ((ItemObject)(categorySpinner.getAdapter()).getItem(categorySpinner.getSelectedItemPosition())).getValue();
+                String categoryId = ((ItemObject)(categorySpinner.getAdapter()).getItem(categorySpinner.getSelectedItemPosition())).getId();
+                requestData(URLs.GET_ITEMS.getName(), productName, categoryId, category);
+            }
 
-        final SwipeRefreshLayout swipeAndRefresh = view.findViewById(R.id.stockProductsListSwipe);
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+        swipeAndRefresh = view.findViewById(R.id.stockProductsListSwipe);
 
         swipeAndRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                try {
-                    requestData(URLs.GET_ITEMS.getName(), null, "500", "");
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                }
+                requestData(URLs.GET_ITEMS.getName(), null, "500", "");
                 swipeAndRefresh.setRefreshing(false);
             }
         });
@@ -100,7 +123,7 @@ public class StockFragment extends Fragment {
         return view;
     }
 
-    private void requestData(final String url, String productName, String categoryId, String category) throws UnsupportedEncodingException {
+    private void requestData(final String url, String productName, String categoryId, String category) {
         RequestPackage requestPackage = RequestFormer.requestStockProductRequestPackage(view.getContext(), url, productName, categoryId, category);
 
         AsyncHttpClient client = new AsyncHttpClient();
@@ -119,7 +142,7 @@ public class StockFragment extends Fragment {
                         responseArray = (JSONArray)responseObject.get("content");
                     }
                     Log.i("response", responseArray.toString());
-                    ProductItemAdapter itemAdapter = new ProductItemAdapter(getContext(), responseArray, "name", R.layout.product_item);
+                    StockItemAdapter itemAdapter = new StockItemAdapter(getContext(), responseArray, "name", R.layout.product_item);
                     productListView.setAdapter(itemAdapter);
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -136,27 +159,12 @@ public class StockFragment extends Fragment {
         final RequestPackage requestPackage = new RequestPackage(view.getContext());
         requestPackage.setMethod(RequestType.GET);
         requestPackage.setUrl(url);
-        ByteArrayEntity entity = null;
-        try {
-            entity = new ByteArrayEntity(requestPackage.getJsonObject().toString().getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        entity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+        requestPackage.getBytes();
 
-        Log.i("SER", requestPackage.getFullUrl() + entity);
-        Log.i("SER", requestPackage.getFullUrl() + requestPackage.getJsonObject());
-
-        LoggedInUser loggedInUser = new FileStream().readUser(getActivity().getDir("data", Context.MODE_PRIVATE));
-
-        if (loggedInUser == null){
-            startIntentLogIn();
-            return;
-        }
         AsyncHttpClient client = new AsyncHttpClient();
-        client.addHeader(getString(R.string.authorizationToken), loggedInUser.getAuthorizationToken());
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
 
-        client.get(getContext(), requestPackage.getFullUrl(), entity, entity.getContentType().toString(), new AsyncHttpResponseHandler(){
+        client.get(getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                 Log.i("Status", statusCode+"");
@@ -177,8 +185,4 @@ public class StockFragment extends Fragment {
         });
     }
 
-    private void startIntentLogIn(){
-        Intent startIntent = new Intent(getContext(), LogInActivity.class);
-        startActivity(startIntent);
-    }
 }

@@ -114,7 +114,6 @@ public class MenuAdapter extends BaseExpandableListAdapter {
             convertView = mInflater.inflate(R.layout.menu_product_item_layout, null);
         }
 
-
         TextView menuItemId = convertView.findViewById(R.id.menuItemId);
         ImageButton addFromMenuBtn = convertView.findViewById(R.id.addFromMenuBtn);
         final TextView menuItemNameTextView = convertView.findViewById(R.id.menuItemNameTextView);
@@ -146,12 +145,8 @@ public class MenuAdapter extends BaseExpandableListAdapter {
             @Override
             public void afterTextChanged(Editable s) {
                 Double qty = (s.toString().isEmpty()) ? 0.0 : Double.parseDouble(s.toString());
-//                if (qty > product.getInStockQty()){
-//                    Toast.makeText(context, "Превышен лимит", Toast.LENGTH_LONG)
-//                            .show();
-//                } else
                 if (qty < 0.0){
-                    Toast.makeText(context, "Значение не может быть отрицательным", Toast.LENGTH_LONG)
+                    Toast.makeText(context, "Значение не может быть отрицательным", Toast.LENGTH_SHORT)
                             .show();
                 }else {
                     product.setBuyQty(qty);

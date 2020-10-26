@@ -1,4 +1,4 @@
-package com.kamilamalikova.help.ui.products.adapter;
+package com.kamilamalikova.help.ui.stock.adapter;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -12,12 +12,13 @@ import androidx.annotation.LayoutRes;
 import androidx.navigation.Navigation;
 
 import com.kamilamalikova.help.R;
+import com.kamilamalikova.help.ui.products.adapter.ItemObject;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class ProductItemAdapter extends BaseAdapter {
+public class StockItemAdapter extends BaseAdapter {
     LayoutInflater mInflater;
     String[] items;
     String[] index;
@@ -26,7 +27,7 @@ public class ProductItemAdapter extends BaseAdapter {
     @LayoutRes
     int layoutRes;
 
-    public ProductItemAdapter(Context c, String[] index, String[] items, String[] qty, String[] unit){
+    public StockItemAdapter(Context c, String[] index, String[] items, String[] qty, String[] unit){
         this.index = index;
         this.items = items;
         this.qty = qty;
@@ -34,7 +35,7 @@ public class ProductItemAdapter extends BaseAdapter {
         this.mInflater = (LayoutInflater)c.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
 
-    public ProductItemAdapter(Context c, JSONArray jsonArrayResponse, @LayoutRes int layoutRes) throws JSONException {
+    public StockItemAdapter(Context c, JSONArray jsonArrayResponse, @LayoutRes int layoutRes) throws JSONException {
         index = new String[jsonArrayResponse.length()];
         items = new String[jsonArrayResponse.length()];
         qty = new String[jsonArrayResponse.length()];
@@ -51,7 +52,7 @@ public class ProductItemAdapter extends BaseAdapter {
         this.layoutRes = layoutRes;
     }
 
-    public ProductItemAdapter(Context c, JSONArray jsonArrayResponse, String productName, @LayoutRes int layoutRes) throws JSONException {
+    public StockItemAdapter(Context c, JSONArray jsonArrayResponse, String productName, @LayoutRes int layoutRes) throws JSONException {
         index = new String[jsonArrayResponse.length()];
         items = new String[jsonArrayResponse.length()];
         qty = new String[jsonArrayResponse.length()];
@@ -104,6 +105,14 @@ public class ProductItemAdapter extends BaseAdapter {
         itemUnitTextView.setText(unit);
         itemQtyTextView.setText(qty);
 
+        convertView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Bundle bundle = new Bundle();
+                bundle.putString("productId", index);
+                Navigation.findNavController(v).navigate(R.id.nav_stock_item, bundle);
+            }
+        });
         return convertView;
     }
 

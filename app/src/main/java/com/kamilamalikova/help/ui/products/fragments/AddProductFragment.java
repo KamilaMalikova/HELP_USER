@@ -101,7 +101,7 @@ public class AddProductFragment extends Fragment {
                             category
                             );
                 }else {
-                    Toast.makeText(view.getContext(), getString(R.string.not_all_fields_are_filled), Toast.LENGTH_LONG)
+                    Toast.makeText(view.getContext(), getString(R.string.not_all_fields_are_filled), Toast.LENGTH_SHORT)
                             .show();
                 }
             }

@@ -121,6 +121,15 @@ public class RequestFormer {
         return requestPackage;
     }
 
+    public static RequestPackage getProductRequestPackage(Context context, String url, StockItemBalance product) throws JSONException {
+        RequestPackage requestPackage = new RequestPackage(context);
+        requestPackage.setMethod(RequestType.POST);
+        requestPackage.setUrl(url+"/"+product.getId());
+        String json = product.generateJSON().toString();
+        requestPackage.setEntity(json);
+        return requestPackage;
+    }
+
     public static RequestPackage getProductRequestPackage(Context context, String productName, String cost, String restaurant, String unit, String category){
         RequestPackage requestPackage = new RequestPackage(context);
         requestPackage.setMethod(RequestType.POST);

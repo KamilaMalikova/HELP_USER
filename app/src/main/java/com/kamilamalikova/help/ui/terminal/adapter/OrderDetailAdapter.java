@@ -64,7 +64,6 @@ public class OrderDetailAdapter extends BaseAdapter {
 
         menuItemQtyTextView.setVisibility(View.INVISIBLE);
 
-        final View finalConvertView = convertView;
         final Product product = productList.get(position);
 
         menuItemId.setText((product.getId()+""));
@@ -87,7 +86,7 @@ public class OrderDetailAdapter extends BaseAdapter {
             public void afterTextChanged(Editable s) {
                 Double qty = (s.toString().isEmpty()) ? 0.0 : Double.parseDouble(s.toString());
                 if (qty < 0.0){
-                    Toast.makeText(context, "Значение не может быть отрицательным", Toast.LENGTH_LONG)
+                    Toast.makeText(context, "Значение не может быть отрицательным", Toast.LENGTH_SHORT)
                             .show();
                 }else {
                     product.setBuyQty(qty);

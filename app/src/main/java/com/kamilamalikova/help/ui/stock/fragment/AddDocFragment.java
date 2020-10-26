@@ -49,7 +49,9 @@ import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.ByteArrayEntity;
@@ -65,8 +67,8 @@ public class AddDocFragment extends Fragment {
     ListView stockProductListView;
     Spinner docTypeSpinner;
     DocTypeAdapter docTypeAdapter;
-    ArrayList<ProductItemObject> productList;
-
+    Set<ProductItemObject> itemObjectSet = new LinkedHashSet<>();
+    ProductItemAdapter itemAdapter;
     public AddDocFragment() {
         // Required empty public constructor
     }
@@ -97,11 +99,11 @@ public class AddDocFragment extends Fragment {
         addProductToListBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-               productList = new ArrayList<>();
-               if (stockProductListView.getAdapter().getCount() > 0){
-
-                   for (int i = 0; i < stockProductListView.getAdapter().getCount(); i++){
-                       ProductItemObject itemObject = (ProductItemObject) stockProductListView.getAdapter().getItem(i);
+               ArrayList<ProductItemObject> productList = new ArrayList<>();
+               List<ProductItemObject> adapterProductsList = itemAdapter.productList;
+               if (adapterProductsList.size() > 0){
+                   for (int i = 0; i < adapterProductsList.size(); i++){
+                       ProductItemObject itemObject = adapterProductsList.get(i);
                        if (itemObject.isChosen()) productList.add(itemObject);
                    }
                    if (productList.size() > 0){
@@ -111,11 +113,11 @@ public class AddDocFragment extends Fragment {
                        Keyboard.hideKeyboard(view.getContext());
                        Navigation.findNavController(view).navigate(R.id.nav_in_out_stock_doc, bundle);
                    }else {
-                       Toast.makeText(view.getContext(), "Необходимо добавить как минимум один продукт", Toast.LENGTH_LONG)
+                       Toast.makeText(view.getContext(), "Необходимо добавить как минимум один продукт", Toast.LENGTH_SHORT)
                                .show();
                    }
                }else {
-                   Toast.makeText(view.getContext(), "Необходимо добавить как минимум один продукт", Toast.LENGTH_LONG)
+                   Toast.makeText(view.getContext(), "Необходимо добавить как минимум один продукт", Toast.LENGTH_SHORT)
                            .show();
                }
             }
@@ -141,7 +143,7 @@ public class AddDocFragment extends Fragment {
                         responseArray = (JSONArray)responseObject.get("content");
                     }
                     Log.i("response", responseArray.toString());
-                    ProductItemAdapter itemAdapter = new ProductItemAdapter(view.getContext(), responseArray);
+                    itemAdapter = new ProductItemAdapter(view.getContext(), responseArray, docTypeSpinner);
                     stockProductListView.setAdapter(itemAdapter);
                 } catch (JSONException e) {
                     e.printStackTrace();

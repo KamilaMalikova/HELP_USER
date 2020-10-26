@@ -122,7 +122,7 @@ public class MenuFragment extends Fragment {
                 public void onClick(View v) {
                     //1. Check if chosen
                     if (orderedProducts.size() == 0) {
-                        Toast.makeText(view.getContext(), "Необходимо заказать!", Toast.LENGTH_LONG)
+                        Toast.makeText(view.getContext(), "Необходимо заказать!", Toast.LENGTH_SHORT)
                                 .show();
                         return;
                     }

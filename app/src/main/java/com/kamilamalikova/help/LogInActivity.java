@@ -52,8 +52,13 @@ public class LogInActivity extends AppCompatActivity {
         passwordTextEdit = (EditText)findViewById(R.id.passwordTextEdit);
         logInBtn = (Button)findViewById(R.id.loginBtn);
 
-
         sessionManager = new SessionManager(getApplicationContext());
+
+        if (sessionManager.getIp().equals("")){
+            Intent intent = new Intent(getApplicationContext(), IpActivity.class);
+            startActivity(intent);
+            finish();
+        }
 
         logInBtn.setOnClickListener(new View.OnClickListener() {
            @Override
@@ -71,7 +76,7 @@ public class LogInActivity extends AppCompatActivity {
                        public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                            String token = getAuthorizationToken(headers);
                            if (token.equals("")) {
-                               Toast.makeText(getApplicationContext(), R.string.autorization_error_wrong_password, Toast.LENGTH_LONG)
+                               Toast.makeText(getApplicationContext(), R.string.autorization_error_wrong_password, Toast.LENGTH_SHORT)
                                        .show();
                                return;
                            }else {
@@ -100,10 +105,10 @@ public class LogInActivity extends AppCompatActivity {
                            Log.i("Failure", statusCode+"");
                            switch (statusCode){
                                case 403 :
-                                   Toast.makeText(getApplicationContext(), R.string.autorization_error_wrong_password, Toast.LENGTH_LONG)
+                                   Toast.makeText(getApplicationContext(), R.string.autorization_error_wrong_password, Toast.LENGTH_SHORT)
                                            .show();
                                    break;
-                               default: Toast.makeText(getApplicationContext(), statusCode+" - "+error.getMessage(), Toast.LENGTH_LONG)
+                               default: Toast.makeText(getApplicationContext(), statusCode+" - "+error.getMessage(), Toast.LENGTH_SHORT)
                                        .show();
                                    break;
                            }
@@ -118,7 +123,6 @@ public class LogInActivity extends AppCompatActivity {
 
             //have to delete and remove
             LoggedInUser loggedInUser = new LoggedInUser("", sessionManager.getUsername(), sessionManager.getRole(), sessionManager.getAuthorizationToken());
-
             //Redirect to navigation activity
             Intent intent = new Intent(getApplicationContext(), NavigationActivity.class);
             intent.putExtra("com.kamilamalikova.help.user", (Parcelable) loggedInUser);

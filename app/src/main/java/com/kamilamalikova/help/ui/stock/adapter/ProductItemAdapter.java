@@ -2,6 +2,7 @@ package com.kamilamalikova.help.ui.stock.adapter;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -14,8 +15,10 @@ import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.Spinner;
 import android.widget.TextView;
 
+import androidx.navigation.Navigation;
 import androidx.viewpager.widget.ViewPager;
 
 import com.kamilamalikova.help.R;
@@ -32,19 +35,20 @@ import java.util.List;
 
 public class ProductItemAdapter extends BaseAdapter {
 
-    List<ProductItemObject> productList;
+    public List<ProductItemObject> productList;
     LayoutInflater mInflater;
+    boolean out;
+    Spinner docType;
 
-
-    public ProductItemAdapter(Context context, List<ProductItemObject> productItemObjectList){
+    public ProductItemAdapter(Context context, List<ProductItemObject> productItemObjectList, Spinner spinner){
         this.productList = productItemObjectList;
         this.mInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        this.docType = spinner;
     }
 
-    public ProductItemAdapter(Context context, JSONArray jsonArray) throws JSONException {
-
+    public ProductItemAdapter(Context context, JSONArray jsonArray, Spinner spinner) throws JSONException {
         productList = new ArrayList<>();
-
+        this.docType = spinner;
         this.mInflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject object = jsonArray.getJSONObject(i);
@@ -70,27 +74,29 @@ public class ProductItemAdapter extends BaseAdapter {
         return position;
     }
 
+    @SuppressLint("ViewHolder")
     @Override
     public View getView(final int position, View convertView, final ViewGroup parent) {
-        View view = this.mInflater.inflate(R.layout.stock_product_item, null);
+        convertView = this.mInflater.inflate(R.layout.stock_product_item, null);
 
-        final CheckBox isChosenCheckBox = view.findViewById(R.id.stockDocProductCheckBox);
-        TextView stockDocProductNameTextView = view.findViewById(R.id.stockDocProductNameTextView);
-        final EditText stockDocQtyTextView = view.findViewById(R.id.stockDocQtyTextView);
-        TextView stockDocIdTextView = view.findViewById(R.id.stockDocIdTextView);
-        TextView stockItemQtyTextView = view.findViewById(R.id.stockItemQtyTextView);
-        ImageButton addBtn = view.findViewById(R.id.addBtn);
-        ImageButton minusBtn = view.findViewById(R.id.minusBtn);
+        final CheckBox isChosenCheckBox = convertView.findViewById(R.id.stockDocProductCheckBox);
+        TextView stockDocProductNameTextView = convertView.findViewById(R.id.stockDocProductNameTextView);
+        final EditText stockDocQtyTextView = convertView.findViewById(R.id.stockDocQtyTextView);
+        TextView stockDocIdTextView = convertView.findViewById(R.id.stockDocIdTextView);
+        TextView stockItemQtyTextView = convertView.findViewById(R.id.stockItemQtyTextView);
+        ImageButton addBtn = convertView.findViewById(R.id.addBtn);
+        ImageButton minusBtn = convertView.findViewById(R.id.minusBtn);
 
-        isChosenCheckBox.setChecked(productList.get(position).isChosen());
-        stockDocProductNameTextView.setText(productList.get(position).getProduct().getName());
-        stockDocQtyTextView.setText((Double.toString(productList.get(position).getQty())));
-        stockDocIdTextView.setText((Long.toString(productList.get(position).getProduct().getId())));
+        final ProductItemObject object = productList.get(position);
+
+        isChosenCheckBox.setChecked(object.isChosen());
+        stockDocProductNameTextView.setText(object.getProduct().getName());
+        stockDocQtyTextView.setText((object.getQty()+""));
+        stockDocIdTextView.setText((object.getProduct().getId()+""));
         stockItemQtyTextView.setText(
                 ("В наличии: "
                         +": "
-                        +(productList.get(position).getProduct().getInStockQty())));
-
+                        +(object.getProduct().getInStockQty())));
 
         stockDocQtyTextView.addTextChangedListener(new TextWatcher() {
             @Override
@@ -102,15 +108,27 @@ public class ProductItemAdapter extends BaseAdapter {
             @Override
             public void afterTextChanged(Editable s) {
                 double qty = (s.toString().isEmpty()) ? 0.0 : Double.parseDouble(s.toString());
-                if (qty <= 0.0){
-                    isChosenCheckBox.setChecked(false);
-                    productList.get(position).setChosen(false);
-                    productList.get(position).setQty(0.0);
+                if (qty < 0.0){
+                    stockDocQtyTextView.setText((0.0+""));
                     return;
                 }
+                if (qty == 0.0){
+                    isChosenCheckBox.setChecked(false);
+                    object.setChosen(false);
+                    object.setQty(0.0);
+                    return;
+                }
+                if ((docType.getSelectedItemId() == 1)){ // check if out
+                    if (qty > object.getProduct().getInStockQty()){
+                        qty = object.getProduct().getInStockQty();
+                        stockDocQtyTextView.setText((qty+""));
+                        return;
+                        //qty = object.getProduct().getInStockQty();
+                    }
+                }
                 isChosenCheckBox.setChecked(true);
-                productList.get(position).setChosen(true);
-                productList.get(position).setQty(qty);
+                object.setChosen(true);
+                object.setQty(qty);
             }
         });
 
@@ -131,6 +149,7 @@ public class ProductItemAdapter extends BaseAdapter {
                 stockDocQtyTextView.setText((qty+""));
             }
         });
-        return view;
+
+        return convertView;
     }
 }

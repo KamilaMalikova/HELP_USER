@@ -140,7 +140,7 @@ public class UserFragment extends Fragment {
             Role role = (Role)roleSpinner.getSelectedItem();
 
             if (username.isEmpty() || name.isEmpty() || lastname.isEmpty()){
-                Toast.makeText(view.getContext(), "Необходимо заполнить все поля!", Toast.LENGTH_LONG)
+                Toast.makeText(view.getContext(), "Необходимо заполнить все поля!", Toast.LENGTH_SHORT)
                         .show();
                 return true;
             }

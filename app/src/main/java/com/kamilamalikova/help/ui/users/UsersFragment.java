@@ -103,7 +103,7 @@ public class UsersFragment extends Fragment {
 
         usersList.setLayoutManager(layoutManager);
         usersList.setAdapter(adapter);
-
+        adapter.init();
         usersList.addOnScrollListener(new PagginationLinerScrollListener(layoutManager) {
             @Override
             protected void loadMoreItems() {
@@ -135,8 +135,9 @@ public class UsersFragment extends Fragment {
                     isLastPage = false;
                     TOTAL_PAGES = 5;
                     currentPage = PAGE_START;
-                    adapter.init();
-                    requestData(URLs.GET_USERS.getName()+"/"+currentPage, null, null);
+                    //adapter.init();
+                    filterByRoleSpinner.setSelection(0);
+                    //requestData(URLs.GET_USERS.getName()+"/"+currentPage, null, null);
                     swipeRefreshLayout.setRefreshing(false);
                 }catch (Exception e){
                     e.printStackTrace();
@@ -210,7 +211,7 @@ public class UsersFragment extends Fragment {
         RequestPackage requestPackage = RequestFormer.getUsersRequestPackage(view.getContext(), url, query, role);
         AsyncHttpClient client = new AsyncHttpClient();
         client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
-
+        client.setResponseTimeout(2000);
         client.get(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
@@ -245,6 +246,7 @@ public class UsersFragment extends Fragment {
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
                 Log.i("Status", statusCode+"");
                 ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
+
             }
 
         });

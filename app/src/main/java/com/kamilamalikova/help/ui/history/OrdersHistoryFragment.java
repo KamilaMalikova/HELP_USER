@@ -146,16 +146,16 @@ public class OrdersHistoryFragment extends Fragment {
 
         orderStatusAdapter = new OrderStatusAdapter(view.getContext());
 
-        requestData(URLs.GET_ORDERS.getName()+"/"+currentPage,
-                null,
-                (user != null) ? user.getUsername() : null, from, to, 0);
-
-
         if (loggedInUser.getRole() == UserRole.ADMIN || loggedInUser.getRole() == UserRole.OWNER){
             requestData(URLs.GET_USERS.getName());
         }else {
                 user = new User(loggedInUser);
         }
+
+        requestData(URLs.GET_ORDERS.getName()+"/"+currentPage,
+                null,
+                (user != null) ? user.getUsername() : null, from, to, 0);
+
 
         layoutManager = new LinearLayoutManager(view.getContext(), LinearLayoutManager.VERTICAL, false);
         historyListView.setOnScrollListener(new PaginationOnScrollListener(layoutManager) {
@@ -241,6 +241,9 @@ public class OrdersHistoryFragment extends Fragment {
             endDateDisplay = popupView.findViewById(R.id.orderDateEndFilterTextView);
             endDateDisplay.setInputType(InputType.TYPE_NULL);
 
+            startDateDisplay.setText((from.getDayOfMonth()+"/"+(from.getMonthValue()+1)+"/"+from.getYear()));
+            endDateDisplay.setText((to.getDayOfMonth()+"/"+(to.getMonthValue()+1)+"/"+to.getYear()));
+
             startDateDisplay.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -287,9 +290,9 @@ public class OrdersHistoryFragment extends Fragment {
                 @Override
                 public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
                     month+=1;
-                    from = LocalDateTime.of(year, month, dayOfMonth, LocalDateTime.now().getHour(), LocalDateTime.now().getMinute(), 0, 0);
+                    from = LocalDateTime.of(year, month, dayOfMonth, 0, 0, 0, 0);
                     if (from.compareTo(LocalDateTime.now()) > 0){
-                        Toast.makeText(popupView.getContext(), "Начальная дата не может быть больше текущей даты", Toast.LENGTH_LONG)
+                        Toast.makeText(popupView.getContext(), "Начальная дата не может быть больше текущей даты", Toast.LENGTH_SHORT)
                                 .show();
                         return;
                     }
@@ -302,9 +305,9 @@ public class OrdersHistoryFragment extends Fragment {
                 @Override
                 public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
                     month+=1;
-                    to = LocalDateTime.of(year, month, dayOfMonth, LocalDateTime.now().getHour(), LocalDateTime.now().getMinute(), 0, 0);
+                    to = LocalDateTime.of(year, month, dayOfMonth, 23, 59, 0, 0);
                     if (to.compareTo(from) < 0){
-                        Toast.makeText(popupView.getContext(), "Конечная дата не может быть больше начальной", Toast.LENGTH_LONG)
+                        Toast.makeText(popupView.getContext(), "Конечная дата не может быть больше начальной", Toast.LENGTH_SHORT)
                                 .show();
                         return;
                     }
@@ -398,7 +401,6 @@ public class OrdersHistoryFragment extends Fragment {
                     JSONArray responseArray;
                     responseArray = new JSONArray(new String(responseBody));
                     ArrayList<User> users = new ArrayList<>();
-
                     if (responseArray.length() > 0){
                         for (int i = 0; i < responseArray.length(); i++) {
                             JSONObject object = responseArray.getJSONObject(i);

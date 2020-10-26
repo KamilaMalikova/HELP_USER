@@ -82,7 +82,8 @@ public class InOutStockFragment extends Fragment {
         ViewPager viewPager = view.findViewById(R.id.stockViewPager);
         addTabs(viewPager);
         ((TabLayout) view.findViewById(R.id.stockDocTabLayout)).setupWithViewPager(viewPager);
-
+        end = LocalDateTime.now();
+        start = LocalDateTime.of(end.getYear(), end.getMonth().getValue()-1, end.getDayOfMonth(), 0, 0);
         FloatingActionButton fab = view.findViewById(R.id.fabAddDoc);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -130,6 +131,9 @@ public class InOutStockFragment extends Fragment {
             startDateDisplay.requestFocus();
             filterBtn = popupView.findViewById(R.id.filterDateBtn);
 
+            startDateDisplay.setText((start.getDayOfMonth()+"/"+(start.getMonthValue()+1)+"/"+start.getYear()));
+            endDateDisplay.setText((end.getDayOfMonth()+"/"+(end.getMonthValue()+1)+"/"+end.getYear()));
+
             startDateDisplay.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -176,9 +180,9 @@ public class InOutStockFragment extends Fragment {
                 @Override
                 public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
                     month+=1;
-                    start = LocalDateTime.of(year, month, dayOfMonth, LocalDateTime.now().getHour(), LocalDateTime.now().getMinute(), 0, 0);
+                    start = LocalDateTime.of(year, month, dayOfMonth, 0, 0, 0, 0);
                     if (start.compareTo(LocalDateTime.now()) > 0){
-                        Toast.makeText(getContext(), "Начальная дата не может быть больше текущей даты", Toast.LENGTH_LONG)
+                        Toast.makeText(getContext(), "Начальная дата не может быть больше текущей даты", Toast.LENGTH_SHORT)
                                 .show();
                         return;
                     }
@@ -191,9 +195,9 @@ public class InOutStockFragment extends Fragment {
                 @Override
                 public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
                     month+=1;
-                    end = LocalDateTime.of(year, month, dayOfMonth, LocalDateTime.now().getHour(), LocalDateTime.now().getMinute(), 0, 0);
+                    end = LocalDateTime.of(year, month, dayOfMonth, 23, 59, 0, 0);
                     if (end.compareTo(start) < 0){
-                        Toast.makeText(getContext(), "Конечная дата не может быть больше начальной", Toast.LENGTH_LONG)
+                        Toast.makeText(getContext(), "Конечная дата не может быть больше начальной", Toast.LENGTH_SHORT)
                                 .show();
                         return;
                     }

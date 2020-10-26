@@ -120,6 +120,7 @@
     <string name="logIn_system">Вход в систему</string>
     <string name="autorization_error_wrong_password">Ошибка авторизации! Неверный логин или пароль</string>
     <string name="content_type">application/json</string>
+    <string name="wrong_addres">Не возможно подключиться к серверу. Проверьте правильность IP адреса.</string>
 
 
     <string-array name="categoriesSpinner">

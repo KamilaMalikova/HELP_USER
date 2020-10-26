@@ -105,7 +105,7 @@ public class OrderReportFragment extends Fragment {
         allSumNumberTextView = view.findViewById(R.id.allSumNumberTextView);
 
         end = LocalDateTime.now();
-        start = LocalDateTime.of(end.getYear(), end.getMonth(), end.getDayOfMonth()-1, 0, 0, 0);
+        start = LocalDateTime.of(end.getYear(), end.getMonth(), end.getDayOfMonth(), 0, 0, 0);
         requestData(URLs.GET_REPORT.getName(), start, end);
 
         reportSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -150,6 +150,9 @@ public class OrderReportFragment extends Fragment {
 
             startDateDisplay.requestFocus();
             filterBtn = popupView.findViewById(R.id.filterDateBtn);
+
+            startDateDisplay.setText((start.getDayOfMonth()+"/"+(start.getMonthValue()+1)+"/"+start.getYear()));
+            endDateDisplay.setText((end.getDayOfMonth()+"/"+(end.getMonthValue()+1)+"/"+end.getYear()));
 
             startDateDisplay.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -197,9 +200,9 @@ public class OrderReportFragment extends Fragment {
                 @Override
                 public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
                     month+=1;
-                    start = LocalDateTime.of(year, month, dayOfMonth, LocalDateTime.now().getHour(), LocalDateTime.now().getMinute(), 0, 0);
+                    start = LocalDateTime.of(year, month, dayOfMonth, 0, 0, 0, 0);
                     if (start.compareTo(LocalDateTime.now()) > 0){
-                        Toast.makeText(popupView.getContext(), "Начальная дата не может быть больше текущей даты", Toast.LENGTH_LONG)
+                        Toast.makeText(popupView.getContext(), "Начальная дата не может быть больше текущей даты", Toast.LENGTH_SHORT)
                                 .show();
                         return;
                     }
@@ -212,9 +215,9 @@ public class OrderReportFragment extends Fragment {
                 @Override
                 public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
                     month+=1;
-                    end = LocalDateTime.of(year, month, dayOfMonth, LocalDateTime.now().getHour(), LocalDateTime.now().getMinute(), 0, 0);
+                    end = LocalDateTime.of(year, month, dayOfMonth, 23, 59, 0, 0);
                     if (end.compareTo(start) < 0){
-                        Toast.makeText(popupView.getContext(), "Конечная дата не может быть больше начальной", Toast.LENGTH_LONG)
+                        Toast.makeText(popupView.getContext(), "Конечная дата не может быть больше начальной", Toast.LENGTH_SHORT)
                                 .show();
                         return;
                     }
@@ -248,7 +251,7 @@ public class OrderReportFragment extends Fragment {
                 try {
                     JSONObject response = new JSONObject(new String(responseBody));
                     report = new OrderReport(response);
-                    adapter = new OrderReportAdapter(getContext(), report.getOrderDetails());
+                    adapter = new OrderReportAdapter(view.getContext(), report.getOrderDetails());
                     orderReportListView.setAdapter(adapter);
                     adapter.notifyDataSetChanged();
                     sumNumberTextView.setText((report.getSum()+" "+getString(R.string.uz_sum)));

@@ -76,47 +76,6 @@ public class OrderAdapter extends BaseAdapter {
         menuItemCostTextView.setText(("Цена: "+": "+orderDetail.getCost()));
         menuItemSelectedQtyTextView.setText((orderDetail.getQuantity()+""));
 
-
-//        menuItemSelectedQtyTextView.addTextChangedListener(new TextWatcher() {
-//            @Override
-//            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-//
-//            }
-//
-//            @Override
-//            public void onTextChanged(CharSequence s, int start, int before, int count) {
-//
-//            }
-//
-//            @Override
-//            public void afterTextChanged(Editable s) {
-//                double text_qty = (s.toString().isEmpty()) ? 0.0 : Double.parseDouble(s.toString());
-//                if (orderDetail.getQuantity() == text_qty) return;
-//
-//                double qty = text_qty - orderDetail.getQuantity();
-//
-//                if (fragment.newOrderDetails == null){
-//                    fragment.newOrderDetails = new LinkedHashSet<>();
-//                }
-//
-//                double sum = 0;
-//                for (OrderDetail subOrder: order.getOrderDetails()) {
-//                    if (subOrder.getProduct().getId() == orderDetail.getProduct().getId())
-//                        sum+=subOrder.getQuantity();
-//                }
-//                if ((sum+qty) < 0){
-//                    Toast.makeText(fragment.getContext(), "Вы пытаетесь отменить больше чем заказали", Toast.LENGTH_LONG)
-//                            .show();
-//                    return;
-//                }
-//
-//                fragment.openMenuBtn.setText("Обновить заказ");
-//                Product product = orderDetail.getProduct();
-//                product.setBuyQty(qty);
-//                fragment.newOrderDetails.add(product);
-//            }
-//        });
-
         addFromMenuBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -151,7 +110,7 @@ public class OrderAdapter extends BaseAdapter {
                         sum+=subOrder.getQuantity();
                 }
                 if ((sum+diff_qty) < 0){
-                    Toast.makeText(fragment.getContext(), "Вы пытаетесь отменить больше чем заказали", Toast.LENGTH_LONG)
+                    Toast.makeText(fragment.getContext(), "Вы пытаетесь отменить больше чем заказали", Toast.LENGTH_SHORT)
                             .show();
                     return;
                 }

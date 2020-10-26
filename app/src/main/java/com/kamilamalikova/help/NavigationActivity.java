@@ -16,8 +16,16 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.navigation.NavigationView;
 import com.kamilamalikova.help.model.LoggedInUser;
+import com.kamilamalikova.help.model.RequestFormer;
+import com.kamilamalikova.help.model.ResponseErrorHandler;
+import com.kamilamalikova.help.model.Role;
 import com.kamilamalikova.help.model.SessionManager;
+import com.kamilamalikova.help.model.URLs;
+import com.kamilamalikova.help.model.User;
 import com.kamilamalikova.help.model.UserRole;
+import com.kamilamalikova.help.request.RequestPackage;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
 
 import androidx.fragment.app.FragmentManager;
 import androidx.navigation.NavController;
@@ -28,21 +36,26 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.File;
+
+import cz.msebera.android.httpclient.Header;
 
 public class NavigationActivity extends AppCompatActivity {
 
     private AppBarConfiguration mAppBarConfiguration;
-
+    String name = "";
+    TextView usernameTextView;
     SessionManager sessionManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         sessionManager = new SessionManager(getApplicationContext());
-        String username = sessionManager.getUsername();
-        String role = sessionManager.getRole();
-
+        String username = sessionManager.getName();
+        String role = role(sessionManager.getRole());
 
         LoggedInUser loggedInUser = (LoggedInUser) getIntent().getExtras().get("com.kamilamalikova.help.user");
         if(loggedInUser.getRole() == UserRole.STUFF){
@@ -57,10 +70,8 @@ public class NavigationActivity extends AppCompatActivity {
         NavigationView navigationView = findViewById(R.id.nav_view);
 
         View headerView = navigationView.getHeaderView(0);
-        TextView usernameTextView = headerView.findViewById(R.id.usernameTextView);
+        usernameTextView = headerView.findViewById(R.id.usernameTextView);
         TextView userRoleTextView = headerView.findViewById(R.id.userRoleTextView);
-
-        sessionManager = new SessionManager(getApplicationContext());
 
         usernameTextView.setText(username);
         userRoleTextView.setText(role);
@@ -82,13 +93,6 @@ public class NavigationActivity extends AppCompatActivity {
                                 sessionManager.setUserName("");
                                 sessionManager.setAuthorizationToken("");
                                 sessionManager.setRole("");
-
-                                File file = getDir("data", Context.MODE_PRIVATE);
-                                File serFile = new File(file.getAbsoluteFile() + "/user.ser");
-                                Log.i("File", serFile.getAbsolutePath());
-                                if (serFile.exists()){
-                                    serFile.delete();
-                                }
                                 Intent startIntent = new Intent(getApplicationContext(), MainActivity.class);
                                 startActivity(startIntent);
                                 finish();
@@ -115,6 +119,7 @@ public class NavigationActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
+        if (sessionManager.getName().equals("") || sessionManager.getLastName().equals("")) requestUser(URLs.GET_USER.getName(), sessionManager.getUsername());
     }
 
 
@@ -134,5 +139,56 @@ public class NavigationActivity extends AppCompatActivity {
         }else {
             super.onBackPressed();
         }
+    }
+
+    private String role(String role){
+        String ru_role = "";
+        switch (role){
+            case "ROLE_ADMIN":
+            case "ADMIN":
+                ru_role = Role.ADMIN.getRu_name();
+                break;
+            case "ROLE_OWNER":
+            case "OWNER":
+                ru_role = Role.OWNER.getRu_name();
+                break;
+            case "ROLE_STUFF":
+            case "STUFF":
+                ru_role = Role.STUFF.getRu_name();
+                break;
+            case "ROLE_WAITER":
+            case "WAITER":
+                ru_role = Role.WAITER.getRu_name();
+                break;
+            default: Role.NOTWORKING.getRu_name();
+        }
+        return ru_role;
+    }
+    public void requestUser(String url, String username){
+        RequestPackage requestPackage = RequestFormer.getRequestPackage(getApplicationContext(), url+"/"+username);
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
+        client.get(getApplicationContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                try {
+                    JSONObject response = new JSONObject(new String(responseBody));
+                    Log.i("Res", response.toString());
+                    User user = new User(response);
+                    sessionManager.setName(user.getName());
+                    sessionManager.setLastName(user.getLastname());
+                    usernameTextView.setText(sessionManager.getName());
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                Log.i("Error", statusCode + " " + new String(responseBody));
+                ResponseErrorHandler.showErrorMessage(getApplicationContext(), statusCode);
+
+            }
+        });
     }
 }

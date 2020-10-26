@@ -164,8 +164,11 @@ public class UsersAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     }
 
     public void init() {
-        this.usersOrigin.clear();
-        this.users.clear();
+        this.users = new ArrayList<>();
+        this.usersOrigin = new ArrayList<>();
+        notifyDataSetChanged();
+/*        this.usersOrigin.clear();
+        this.users.clear();*/
     }
 
     public class LoadingViewHolder extends RecyclerView.ViewHolder {

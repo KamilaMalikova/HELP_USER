@@ -16,6 +16,7 @@ import com.kamilamalikova.help.model.Product;
 import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.StockDocument;
 import com.kamilamalikova.help.model.StockItemBalance;
+import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.ui.stock.adapter.ProductItemObject;
 import com.loopj.android.http.RequestParams;
 
@@ -30,6 +31,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.URL;
+import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
@@ -241,5 +245,12 @@ public class RequestPackage {
         return entity;
     }
 
-
+    public boolean isConnected(int timeout){
+        try {
+            return InetAddress.getByName(getUrl()).isReachable(timeout);
+        }catch (Exception e){
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

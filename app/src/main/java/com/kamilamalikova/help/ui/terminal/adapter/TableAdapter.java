@@ -236,7 +236,7 @@ public class TableAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
                         if (eatingPlace.getWaiterUsername().equals(user.getUsername())){
                             requestOrder(URLs.GET_ORDERS.getName()+"/0", eatingPlace, itemView);
                         }else {
-                            Toast.makeText(context, "Вы не обслуживаете данный стол!", Toast.LENGTH_LONG)
+                            Toast.makeText(context, "Вы не обслуживаете данный стол!", Toast.LENGTH_SHORT)
                                     .show();
                             return;
                         }
