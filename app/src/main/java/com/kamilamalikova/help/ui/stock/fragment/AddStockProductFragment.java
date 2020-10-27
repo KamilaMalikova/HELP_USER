@@ -23,6 +23,7 @@ import com.kamilamalikova.help.LogInActivity;
 import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.Category;
 import com.kamilamalikova.help.model.FileStream;
+import com.kamilamalikova.help.model.Keyboard;
 import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.model.RequestFormer;
 import com.kamilamalikova.help.model.ResponseErrorHandler;
@@ -92,6 +93,7 @@ public class AddStockProductFragment extends Fragment {
             @SuppressLint("SetTextI18n")
             @Override
             public void onClick(View v) {
+                Keyboard.hideKeyboard(view.getContext());
                 category = new Category( Integer.parseInt(((ItemObject)((ItemAdapter)categorySpinner.getAdapter()).getItem(categorySpinner.getSelectedItemPosition())).getId()),
                         ((ItemObject)((ItemAdapter)categorySpinner.getAdapter()).getItem(categorySpinner.getSelectedItemPosition())).getValue()
                         );

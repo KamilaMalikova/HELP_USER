@@ -103,7 +103,8 @@ public class StockFragment extends Fragment {
         swipeAndRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                requestData(URLs.GET_ITEMS.getName(), null, "500", "");
+                categorySpinner.setSelection(categorySpinner.getAdapter().getCount()-1);
+                //requestData(URLs.GET_ITEMS.getName(), null, "500", "");
                 swipeAndRefresh.setRefreshing(false);
             }
         });

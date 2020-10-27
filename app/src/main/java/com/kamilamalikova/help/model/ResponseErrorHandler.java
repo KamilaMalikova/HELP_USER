@@ -27,6 +27,9 @@ public class ResponseErrorHandler {
             case 424:
                 message = "Данные не могут быть удаленны, так как используются в других разделах! Возможно только изменить";
                 break;
+            case 0:
+                message = "Невозможно связаться с сервером";
+                break;
             default:
                 message = code+" - ошибка";
         }

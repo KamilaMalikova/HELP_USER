@@ -5,6 +5,7 @@
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".ui.stock.fragment.AddStockProductFragment"
+    android:paddingHorizontal="20dp"
     android:orientation="vertical">
 
     <EditText

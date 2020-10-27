@@ -134,8 +134,8 @@ public class UsersAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
     }
 
     public void add (String username, String password, String name, String lastname, Role role){
-        this.users.add(new User(username, password, name, lastname, role));
-        this.usersOrigin.add(new User(username, password, name, lastname, role));
+        this.users.add(new User(username, password, name, lastname, role, ""));
+        this.usersOrigin.add(new User(username, password, name, lastname, role, ""));
         notifyDataSetChanged();
     }
 

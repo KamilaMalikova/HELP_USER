@@ -84,5 +84,17 @@ public class SessionManager {
         editor.commit();
     }
 
+    public void setLogout(){
+        setLogin(false);
+        setUserName("");
+        setName("");
+        setLastName("");
+        setRole("");
+        setRole("NOTWORKING");
+        setAuthorizationToken("");
+        setPassword("");
+    }
+
+
 
 }

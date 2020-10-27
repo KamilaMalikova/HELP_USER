@@ -123,7 +123,7 @@ public class AddUserFragment extends Fragment {
                             .show();
                     return;
                 }
-                User user = new User(username, password, name, lastname, role);
+                User user = new User(username, password, name, lastname, role, sessionManager.getUsername());
                 addUser(URLs.POST_USER.getName(), user);
             }
         });

@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation_stuff"
+    app:startDestination="@+id/nav_products">
+
+
+    <fragment
+        android:id="@+id/nav_settings"
+        android:name="com.kamilamalikova.help.ui.settings.SettingsFragment"
+        android:label="@string/menu_settings"
+        tools:layout="@layout/fragment_settings" />
+
+    <fragment
+        android:id="@+id/nav_report"
+        android:name="com.kamilamalikova.help.ui.report.OrderReportFragment"
+        android:label="@string/report"
+        tools:layout="@layout/fragment_order_report" />
+
+
+    <fragment
+        android:id="@+id/nav_products"
+        android:name="com.kamilamalikova.help.ui.products.ProductsFragment"
+        android:label="@string/menu_products"
+        tools:layout="@layout/fragment_products" >
+        <action
+            android:id="@+id/action_product_to_add_product"
+            app:destination="@+id/addProductFragment"/>
+        <action
+            android:id="@+id/start_products_detail"
+            app:destination="@+id/nav_product_detail">
+            <argument
+                android:name="id"
+                app:argType="long"
+                android:defaultValue="0L"
+                />
+        </action>
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_terminal"
+        android:name="com.kamilamalikova.help.ui.terminal.TerminalFragment"
+        android:label="@string/menu_terminal"
+        tools:layout="@layout/fragment_terminal" />
+    <fragment
+        android:id="@+id/nav_stock"
+        android:name="com.kamilamalikova.help.ui.stock.StockFragment"
+        android:label="@string/menu_stock"
+        tools:layout="@layout/fragment_stock" />
+
+    <fragment
+        android:id="@+id/addProductFragment"
+        android:name="com.kamilamalikova.help.ui.products.fragments.AddProductFragment"
+        android:label="@string/menu_add_product"
+        tools:layout="@layout/fragment_add_product" />
+
+    <fragment
+        android:id="@+id/nav_product_filter"
+        android:label="@string/filter"
+        tools:layout="@layout/fragment_products_filter" />
+
+    <fragment
+        android:id="@+id/nav_product_detail"
+        android:name="com.kamilamalikova.help.ui.products.fragments.ProductDetailsFragment"
+        android:label="@string/product"
+        tools:layout="@layout/fragment_product_details" />
+
+    <fragment
+        android:id="@+id/nav_stock_product_add"
+        android:name="com.kamilamalikova.help.ui.stock.fragment.AddStockProductFragment"
+        android:label="@string/add"
+        tools:layout="@layout/fragment_add_stock_product" />
+
+    <fragment
+        android:id="@+id/nav_in_out_stock"
+        android:name="com.kamilamalikova.help.ui.stock.fragment.InOutStockFragment"
+        android:label="@string/in_out"
+        tools:layout="@layout/fragment_in_out_stock" />
+
+    <fragment
+        android:id="@+id/nav_add_in_out_stock_doc"
+        android:name="com.kamilamalikova.help.ui.stock.fragment.AddDocFragment"
+        android:label="@string/new_doc"
+        tools:layout="@layout/fragment_add_doc" />
+
+    <fragment
+        android:id="@+id/nav_in_out_stock_doc"
+        android:name="com.kamilamalikova.help.ui.stock.fragment.DocumentFragment"
+        android:label="@string/document"
+        tools:layout="@layout/fragment_document" />
+
+    <fragment
+        android:id="@+id/nav_menu"
+        android:name="com.kamilamalikova.help.ui.terminal.fragments.MenuFragment"
+        android:label="@string/menu"
+        tools:layout="@layout/fragment_menu" />
+
+    <fragment
+        android:id="@+id/nav_approve_order"
+        android:name="com.kamilamalikova.help.ui.terminal.fragments.ApproveOrderFragment"
+        android:label="@string/order"
+        tools:layout="@layout/fragment_approve_order" />
+
+    <fragment
+        android:id="@+id/nav_order"
+        android:name="com.kamilamalikova.help.ui.terminal.fragments.OrderFragment"
+        android:label="@string/this_order"
+        tools:layout="@layout/fragment_order_fragment" />
+
+
+    <fragment
+        android:id="@+id/nav_tables_settings"
+        android:name="com.kamilamalikova.help.ui.settings.tabfragments.TablesSettingsFragment"
+        android:label="@string/tables"
+        tools:layout="@layout/fragment_tables_settings" />
+
+    <fragment
+        android:id="@+id/nav_ip_settings"
+        android:name="com.kamilamalikova.help.ui.settings.tabfragments.IpFragment"
+        android:label="@string/ip"
+        tools:layout="@layout/fragment_ip" />
+
+
+    <fragment
+        android:id="@+id/nav_users"
+        android:name="com.kamilamalikova.help.ui.users.UsersFragment"
+        android:label="@string/users"
+        tools:layout="@layout/fragment_users" />
+
+    <fragment
+        android:id="@+id/nav_add_user"
+        android:name="com.kamilamalikova.help.ui.users.AddUserFragment"
+        android:label="@string/users"
+        tools:layout="@layout/fragment_add_user" />
+
+    <fragment
+        android:id="@+id/nav_user"
+        android:name="com.kamilamalikova.help.ui.users.UserFragment"
+        android:label="@string/users"
+        tools:layout="@layout/fragment_user" />
+
+    <fragment
+        android:id="@+id/nav_order_history"
+        android:name="com.kamilamalikova.help.ui.history.OrdersHistoryFragment"
+        android:label="@string/order_history"
+        tools:layout="@layout/fragment_orders_history" />
+    <fragment
+        android:id="@+id/nav_stock_item"
+        android:name="com.kamilamalikova.help.ui.stock.fragment.StockItemFragment"
+        android:label="@string/product"
+        tools:layout="@layout/fragment_stock_item" />
+
+</navigation>

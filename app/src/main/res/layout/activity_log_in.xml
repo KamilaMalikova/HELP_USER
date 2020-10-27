@@ -16,9 +16,10 @@
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintHorizontal_bias="0.6"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.202">
 
         <TextView
             android:layout_width="wrap_content"
@@ -28,31 +29,39 @@
             android:textColor="@color/main_color"
             android:textStyle="bold" />
 
-        <EditText
-            android:id="@+id/usernameTextEdit"
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:background="@drawable/bg_outline_rectangle"
-            android:drawableLeft="@drawable/ic_baseline_person_24"
-            android:drawablePadding="16dp"
-            android:ems="10"
-            android:hint="@string/username"
-            android:inputType="textPersonName"
-            android:padding="12dp" />
+            app:startIconDrawable="@drawable/ic_baseline_person_24">
 
-        <EditText
-            android:id="@+id/passwordTextEdit"
+            <EditText
+                android:id="@+id/usernameTextEdit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:hint="@string/username"
+                android:inputType="textPersonName" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:background="@drawable/bg_outline_rectangle"
-            android:drawableLeft="@drawable/ic_baseline_lock_24"
-            android:drawablePadding="16dp"
-            android:ems="10"
-            android:hint="@string/password"
-            android:inputType="textPassword"
-            android:padding="12dp" />
+            app:passwordToggleEnabled="true"
+            app:startIconDrawable="@drawable/ic_baseline_lock_24">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/passwordTextEdit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:hint="@string/password"
+                android:inputType="textPassword" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
 
         <Button
             android:id="@+id/loginBtn"

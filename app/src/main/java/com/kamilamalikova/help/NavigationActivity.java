@@ -29,6 +29,7 @@ import com.loopj.android.http.AsyncHttpResponseHandler;
 
 import androidx.fragment.app.FragmentManager;
 import androidx.navigation.NavController;
+import androidx.navigation.NavGraph;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
@@ -89,10 +90,8 @@ public class NavigationActivity extends AppCompatActivity {
                         .setPositiveButton("Да", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                sessionManager.setLogin(false);
-                                sessionManager.setUserName("");
-                                sessionManager.setAuthorizationToken("");
-                                sessionManager.setRole("");
+                                sessionManager.setLogout();
+
                                 Intent startIntent = new Intent(getApplicationContext(), MainActivity.class);
                                 startActivity(startIntent);
                                 finish();
@@ -117,9 +116,12 @@ public class NavigationActivity extends AppCompatActivity {
                 .build();
 
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
+        if (loggedInUser.getRole() == UserRole.STUFF){
+            navController.setGraph(R.navigation.mobile_navigation_stuff);
+        }
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
-        if (sessionManager.getName().equals("") || sessionManager.getLastName().equals("")) requestUser(URLs.GET_USER.getName(), sessionManager.getUsername());
+        if (sessionManager.getName().equals("") || sessionManager.getLastName().equals(""))requestUser(URLs.GET_USER.getName(), sessionManager.getUsername());
     }
 
 

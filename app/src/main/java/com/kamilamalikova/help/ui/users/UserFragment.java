@@ -144,7 +144,7 @@ public class UserFragment extends Fragment {
                         .show();
                 return true;
             }
-            User user = new User(username, password, name, lastname, role);
+            User user = new User(username, password, name, lastname, role, "");
             saveUser(URLs.POST_USER.getName()+"/"+user.getUsername(), user);
         }
         else {

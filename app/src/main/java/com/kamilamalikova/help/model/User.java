@@ -28,12 +28,13 @@ public class User implements Parcelable {
 
     private boolean deleted = false;
 
-    public User(String username, String password, String name, String lastname, Role role) {
+    public User(String username, String password, String name, String lastname, Role role, String creator) {
         this.username = username;
         this.password = password;
         this.name = name;
         this.lastname = lastname;
         this.role = role;
+        this.creator = creator;
         if (role == Role.NOTWORKING){
             this.deleted = true;
         }else this.deleted = false;
