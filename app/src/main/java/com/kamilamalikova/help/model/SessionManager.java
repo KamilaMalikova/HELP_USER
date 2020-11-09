@@ -36,7 +36,7 @@ public class SessionManager {
         editor.commit();
     }
 
-    public String getPassword(String password){
+    public String getPassword(){
         return sharedPreferences.getString("KEY_PASSWORD", "");
     }
 

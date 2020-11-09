@@ -24,6 +24,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.kamilamalikova.help.LogInActivity;
 import com.kamilamalikova.help.R;
 import com.kamilamalikova.help.model.FileStream;
+import com.kamilamalikova.help.model.Keyboard;
 import com.kamilamalikova.help.model.LoggedInUser;
 import com.kamilamalikova.help.model.RequestFormer;
 import com.kamilamalikova.help.model.ResponseErrorHandler;
@@ -100,6 +101,7 @@ public class AddProductFragment extends Fragment {
                             unit,
                             category
                             );
+                    Keyboard.hideKeyboard(view.getContext());
                 }else {
                     Toast.makeText(view.getContext(), getString(R.string.not_all_fields_are_filled), Toast.LENGTH_SHORT)
                             .show();

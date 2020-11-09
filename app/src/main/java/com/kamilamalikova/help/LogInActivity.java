@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -42,16 +43,25 @@ public class LogInActivity extends AppCompatActivity {
     EditText usernameTextEdit;
     EditText passwordTextEdit;
     Button logInBtn;
+    Button ipSetBtn;
 
     SessionManager sessionManager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_log_in);
-        usernameTextEdit = (EditText)findViewById(R.id.usernameTextEdit);
-        passwordTextEdit = (EditText)findViewById(R.id.passwordTextEdit);
-        logInBtn = (Button)findViewById(R.id.loginBtn);
-
+        usernameTextEdit = findViewById(R.id.usernameTextEdit);
+        passwordTextEdit = findViewById(R.id.passwordTextEdit);
+        logInBtn = findViewById(R.id.loginBtn);
+        ipSetBtn = findViewById(R.id.ipSetBtn);
+        ipSetBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Redirect to ip activity
+                Intent intent = new Intent(getApplicationContext(), IpActivity.class);
+                startActivity(intent);
+            }
+        });
         sessionManager = new SessionManager(getApplicationContext());
 
         if (sessionManager.getIp().equals("")){
@@ -68,75 +78,23 @@ public class LogInActivity extends AppCompatActivity {
                if (password.equals("")){
                     passwordTextEdit.setError("Введите пароль");
                }
-                   AsyncHttpClient client = new AsyncHttpClient();
-                   RequestPackage requestPackage = getRequestPackage();
-
-                   client.post(getApplicationContext(), requestPackage.getFullUrl(), requestPackage.getBytes(), "application/json", new AsyncHttpResponseHandler() {
-                       @Override
-                       public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
-                           String token = getAuthorizationToken(headers);
-                           if (token.equals("")) {
-                               Toast.makeText(getApplicationContext(), R.string.autorization_error_wrong_password, Toast.LENGTH_SHORT)
-                                       .show();
-                               return;
-                           }else {
-                               //store user data in session manager
-                               sessionManager.setLogin(true);
-                               sessionManager.setUserName(username);
-                               sessionManager.setPassword(password);
-                               sessionManager.setAuthorizationToken(token);
-                               String role = getRoleFromToken(token);
-                               if(!role.equals("")) sessionManager.setRole(role);
-
-
-                               LoggedInUser loggedInUser = new LoggedInUser("", username, role, token);
-
-                               //Redirect to navigation activity
-                               Intent intent = new Intent(getApplicationContext(), NavigationActivity.class);
-                               intent.putExtra("com.kamilamalikova.help.user", (Parcelable) loggedInUser);
-                               startActivity(intent);
-                               finish();
-                           }
-
-                       }
-
-                       @Override
-                       public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                           Log.i("Failure", statusCode+"");
-                           switch (statusCode){
-                               case 403 :
-                                   Toast.makeText(getApplicationContext(), R.string.autorization_error_wrong_password, Toast.LENGTH_SHORT)
-                                           .show();
-                                   break;
-                               default: Toast.makeText(getApplicationContext(), statusCode+" - "+error.getMessage(), Toast.LENGTH_SHORT)
-                                       .show();
-                                   break;
-                           }
-
-                           error.getStackTrace();
-                       }
-                   });
+                   login(username, password);
            }
         });
 
         if (sessionManager.getLogin()){
-
-            //have to delete and remove
-            LoggedInUser loggedInUser = new LoggedInUser("", sessionManager.getUsername(), sessionManager.getRole(), sessionManager.getAuthorizationToken());
-            //Redirect to navigation activity
-            Intent intent = new Intent(getApplicationContext(), NavigationActivity.class);
-            intent.putExtra("com.kamilamalikova.help.user", (Parcelable) loggedInUser);
-            startActivity(intent);
-            finish();
+            if (isTokenValid(sessionManager.getAuthorizationToken())){
+                login(sessionManager.getUsername(), sessionManager.getPassword());
+            }
         }
     }
 
-    public RequestPackage getRequestPackage(){
+    public RequestPackage getRequestPackage(String username, String password){
         RequestPackage requestPackage = new RequestPackage(getApplicationContext());
         requestPackage.setMethod(RequestType.POST);
         requestPackage.setUrl("/login");
-        requestPackage.setParam("username", usernameTextEdit.getText().toString());
-        requestPackage.setParam("password", passwordTextEdit.getText().toString());
+        requestPackage.setParam("username", username);
+        requestPackage.setParam("password", password);
 
         return requestPackage;
     }
@@ -148,9 +106,56 @@ public class LogInActivity extends AppCompatActivity {
         return "";
     }
 
+    public void login(final String username, final String password){
+        AsyncHttpClient client = new AsyncHttpClient();
+        RequestPackage requestPackage = getRequestPackage(username, password);
+
+        client.post(getApplicationContext(), requestPackage.getFullUrl(), requestPackage.getBytes(), "application/json", new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
+                String token = getAuthorizationToken(headers);
+                if (token.equals("")) {
+                    Toast.makeText(getApplicationContext(), R.string.autorization_error_wrong_password, Toast.LENGTH_SHORT)
+                            .show();
+                }else {
+                    //store user data in session manager
+                    sessionManager.setLogin(true);
+                    sessionManager.setUserName(username);
+                    sessionManager.setPassword(password);
+                    sessionManager.setAuthorizationToken(token);
+                    String role = getRoleFromToken(token);
+                    if(!role.equals("")) sessionManager.setRole(role);
+                    LoggedInUser loggedInUser = new LoggedInUser("", username, role, token);
+                    //Redirect to navigation activity
+                    Intent intent = new Intent(getApplicationContext(), NavigationActivity.class);
+                    intent.putExtra("com.kamilamalikova.help.user", (Parcelable) loggedInUser);
+                    startActivity(intent);
+                    finish();
+                }
+
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
+                Log.i("Failure", statusCode+"");
+                switch (statusCode){
+                    case 403 :
+                        Toast.makeText(getApplicationContext(), R.string.autorization_error_wrong_password, Toast.LENGTH_SHORT)
+                                .show();
+                        break;
+                    default: Toast.makeText(getApplicationContext(), statusCode+" - "+error.getMessage(), Toast.LENGTH_SHORT)
+                            .show();
+                        break;
+                }
+
+                error.getStackTrace();
+            }
+        });
+
+    }
+
     public String getRoleFromToken(String token){
         Claims claims = Jwt.decodeJWT(token);
-
         ArrayList<LinkedHashMap<String, String>> roles = (ArrayList<LinkedHashMap<String, String>>) claims.get("authorities");
 
         String role = "";
@@ -161,6 +166,12 @@ public class LogInActivity extends AppCompatActivity {
             }
         }
         return role;
+    }
+
+    public boolean isTokenValid(String token){
+        Date date = Jwt.getExpirationDate(token);
+        if (date.after(new Date())) return true;
+        else return false;
     }
 
 }

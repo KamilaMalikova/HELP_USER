@@ -72,6 +72,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.ByteArrayEntity;
@@ -241,8 +242,8 @@ public class OrdersHistoryFragment extends Fragment {
             endDateDisplay = popupView.findViewById(R.id.orderDateEndFilterTextView);
             endDateDisplay.setInputType(InputType.TYPE_NULL);
 
-            startDateDisplay.setText((from.getDayOfMonth()+"/"+(from.getMonthValue()+1)+"/"+from.getYear()));
-            endDateDisplay.setText((to.getDayOfMonth()+"/"+(to.getMonthValue()+1)+"/"+to.getYear()));
+            startDateDisplay.setText((from.getDayOfMonth()+"/"+(from.getMonthValue())+"/"+from.getYear()));
+            endDateDisplay.setText((to.getDayOfMonth()+"/"+(to.getMonthValue())+"/"+to.getYear()));
 
             startDateDisplay.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -351,7 +352,6 @@ public class OrdersHistoryFragment extends Fragment {
         RequestPackage requestPackage = RequestFormer.getOrdersRequestPackage(view.getContext(), url, status, username, from, to, tableId);
         AsyncHttpClient client = new AsyncHttpClient();
         client.addHeader(getString(R.string.authorizationToken), sessionManager.getAuthorizationToken());
-
         client.get(view.getContext(), requestPackage.getFullUrl(), requestPackage.getEntity(), "application/json", new AsyncHttpResponseHandler(){
             @Override
             public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {

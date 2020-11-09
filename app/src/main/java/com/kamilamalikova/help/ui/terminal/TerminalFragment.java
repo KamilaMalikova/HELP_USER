@@ -297,8 +297,14 @@ public class TerminalFragment extends Fragment {
             }
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                Log.i("Status", statusCode+new String(responseBody));
-                ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
+
+                try {
+                    Log.i("Status", statusCode+new String(responseBody));
+                    ResponseErrorHandler.showErrorMessage(view.getContext(), statusCode);
+                }catch (Exception e){
+                    ResponseErrorHandler.showErrorMessage(view.getContext(), 0);
+                }
+
             }
 
         });

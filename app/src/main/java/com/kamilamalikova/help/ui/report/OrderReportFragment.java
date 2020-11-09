@@ -105,7 +105,7 @@ public class OrderReportFragment extends Fragment {
         allSumNumberTextView = view.findViewById(R.id.allSumNumberTextView);
 
         end = LocalDateTime.now();
-        start = LocalDateTime.of(end.getYear(), end.getMonth(), end.getDayOfMonth(), 0, 0, 0);
+        start = LocalDateTime.of(end.getYear(), end.getMonth(), end.getDayOfMonth()-1, 0, 0, 0);
         requestData(URLs.GET_REPORT.getName(), start, end);
 
         reportSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -151,8 +151,8 @@ public class OrderReportFragment extends Fragment {
             startDateDisplay.requestFocus();
             filterBtn = popupView.findViewById(R.id.filterDateBtn);
 
-            startDateDisplay.setText((start.getDayOfMonth()+"/"+(start.getMonthValue()+1)+"/"+start.getYear()));
-            endDateDisplay.setText((end.getDayOfMonth()+"/"+(end.getMonthValue()+1)+"/"+end.getYear()));
+            startDateDisplay.setText((start.getDayOfMonth()+"/"+(start.getMonthValue())+"/"+start.getYear()));
+            endDateDisplay.setText((end.getDayOfMonth()+"/"+(end.getMonthValue())+"/"+end.getYear()));
 
             startDateDisplay.setOnClickListener(new View.OnClickListener() {
                 @Override

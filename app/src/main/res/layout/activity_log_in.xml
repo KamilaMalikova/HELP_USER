@@ -41,7 +41,8 @@
                 android:layout_height="wrap_content"
                 android:ems="10"
                 android:hint="@string/username"
-                android:inputType="textPersonName" />
+                android:inputType="textPersonName"
+                android:importantForAutofill="no" />
         </com.google.android.material.textfield.TextInputLayout>
 
 
@@ -71,6 +72,17 @@
             android:background="@color/main_color"
             android:text="@string/logIn"
             android:textColor="@android:color/white" />
+
+        <Button
+            android:id="@+id/ipSetBtn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@android:color/transparent"
+            android:drawableBottom="@drawable/button_style"
+            android:text="@string/change_ip"
+            android:textColor="@color/main_color"
+            android:textStyle="bold" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

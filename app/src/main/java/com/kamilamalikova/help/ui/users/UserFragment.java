@@ -30,6 +30,7 @@ import com.kamilamalikova.help.model.SessionManager;
 import com.kamilamalikova.help.model.URLs;
 import com.kamilamalikova.help.model.Unit;
 import com.kamilamalikova.help.model.User;
+import com.kamilamalikova.help.model.UserRole;
 import com.kamilamalikova.help.request.RequestPackage;
 import com.kamilamalikova.help.request.RequestType;
 import com.kamilamalikova.help.ui.products.adapter.ItemAdapter;
@@ -145,7 +146,12 @@ public class UserFragment extends Fragment {
                 return true;
             }
             User user = new User(username, password, name, lastname, role, "");
-            saveUser(URLs.POST_USER.getName()+"/"+user.getUsername(), user);
+            if (user.getRole() == Role.ADMIN){
+                Toast.makeText(view.getContext(), "Невозможно менять данные администратора!", Toast.LENGTH_SHORT)
+                        .show();
+            }else {
+                saveUser(URLs.POST_USER.getName()+"/"+user.getUsername(), user);
+            }
         }
         else {
             getActivity().onBackPressed();
@@ -170,6 +176,8 @@ public class UserFragment extends Fragment {
                         enable(false);
                         fill(user1);
                         edit.setVisible(true);
+                        Toast.makeText(view.getContext(), "Попросите пользователя выйти и войти в систему для подтверждения результатов!", Toast.LENGTH_SHORT)
+                                .show();
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }

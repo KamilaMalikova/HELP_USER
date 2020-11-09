@@ -18,13 +18,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <androidx.appcompat.widget.SearchView
-            android:id="@+id/unitsSearchingView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-        </androidx.appcompat.widget.SearchView>
-
     </LinearLayout>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout

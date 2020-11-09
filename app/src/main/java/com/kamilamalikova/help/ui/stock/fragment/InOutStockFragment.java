@@ -131,8 +131,8 @@ public class InOutStockFragment extends Fragment {
             startDateDisplay.requestFocus();
             filterBtn = popupView.findViewById(R.id.filterDateBtn);
 
-            startDateDisplay.setText((start.getDayOfMonth()+"/"+(start.getMonthValue()+1)+"/"+start.getYear()));
-            endDateDisplay.setText((end.getDayOfMonth()+"/"+(end.getMonthValue()+1)+"/"+end.getYear()));
+            startDateDisplay.setText((start.getDayOfMonth()+"/"+(start.getMonthValue())+"/"+start.getYear()));
+            endDateDisplay.setText((end.getDayOfMonth()+"/"+(end.getMonthValue())+"/"+end.getYear()));
 
             startDateDisplay.setOnClickListener(new View.OnClickListener() {
                 @Override
